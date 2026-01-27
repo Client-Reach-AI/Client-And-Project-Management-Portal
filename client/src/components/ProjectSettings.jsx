@@ -20,6 +20,11 @@ export default function ProjectSettings({ project }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const dispatch = useDispatch();
+  const user = useSelector((state) => state.auth.user);
+  const memberRole = currentWorkspace?.members?.find(
+    (m) => m.user.id === user?.id
+  )?.role;
+  const isAdmin = user?.role === 'ADMIN' || memberRole === 'ADMIN';
   const currentWorkspace = useSelector(
     (state) => state.workspace.currentWorkspace
   );
@@ -184,6 +189,16 @@ export default function ProjectSettings({ project }) {
               }
               className="w-full accent-blue-500 dark:accent-blue-400"
             />
+            {isAdmin && (
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="ml-auto flex items-center text-sm justify-center gap-2 bg-linear-to-br from-blue-500 to-blue-600 text-white px-4 py-2 rounded"
+              >
+                <Save className="size-4" />{' '}
+                {isSubmitting ? 'Saving...' : 'Save Changes'}
+              </button>
+            )}
           </div>
 
           {/* Save Button */}
@@ -208,17 +223,21 @@ export default function ProjectSettings({ project }) {
                 ({project.members.length})
               </span>
             </h2>
-            <button
-              type="button"
-              onClick={() => setIsDialogOpen(true)}
-              className="p-2 rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-            >
-              <Plus className="size-4 text-zinc-900 dark:text-zinc-300" />
-            </button>
-            <AddProjectMember
-              isDialogOpen={isDialogOpen}
-              setIsDialogOpen={setIsDialogOpen}
-            />
+            {isAdmin && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsDialogOpen(true)}
+                  className="p-2 rounded-lg border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  <Plus className="size-4 text-zinc-900 dark:text-zinc-300" />
+                </button>
+                <AddProjectMember
+                  isDialogOpen={isDialogOpen}
+                  setIsDialogOpen={setIsDialogOpen}
+                />
+              </>
+            )}
           </div>
 
           {/* Member List */}

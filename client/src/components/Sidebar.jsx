@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import MyTasksSidebar from './MyTasksSidebar';
 import ProjectSidebar from './ProjectsSidebar';
 import WorkspaceDropdown from './WorkspaceDropdown';
@@ -11,10 +12,19 @@ import {
 } from 'lucide-react';
 
 const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
+  const user = useSelector((state) => state.auth.user);
+  const currentWorkspace = useSelector(
+    (state) => state.workspace.currentWorkspace
+  );
+  const memberRole = currentWorkspace?.members?.find(
+    (m) => m.user.id === user?.id
+  )?.role;
+  const isAdmin = user?.role === 'ADMIN' || memberRole === 'ADMIN';
+
   const menuItems = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboardIcon },
     { name: 'Projects', href: '/projects', icon: FolderOpenIcon },
-    { name: 'Team', href: '/team', icon: UsersIcon },
+    ...(isAdmin ? [{ name: 'Team', href: '/team', icon: UsersIcon }] : []),
   ];
 
   const sidebarRef = useRef(null);

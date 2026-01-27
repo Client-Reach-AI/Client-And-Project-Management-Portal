@@ -67,3 +67,18 @@ export const addProjectMember = async (projectId, payload) =>
     method: 'POST',
     body: JSON.stringify(payload),
   });
+
+export const sendInvitation = async (payload) =>
+  apiFetch('/api/invitations', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
+export const lookupInvitation = async (token) =>
+  apiFetch(`/api/invitations/lookup?token=${encodeURIComponent(token)}`);
+
+export const acceptInvitation = async (payload) =>
+  apiFetch('/api/invitations/accept', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });

@@ -9,6 +9,13 @@ import { useSelector } from 'react-redux';
 
 const Dashboard = () => {
   const user = useSelector((state) => state.auth.user);
+  const currentWorkspace = useSelector(
+    (state) => state.workspace.currentWorkspace
+  );
+  const memberRole = currentWorkspace?.members?.find(
+    (m) => m.user.id === user?.id
+  )?.role;
+  const isAdmin = user?.role === 'ADMIN' || memberRole === 'ADMIN';
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   return (
@@ -25,17 +32,21 @@ const Dashboard = () => {
           </p>
         </div>
 
-        <button
-          onClick={() => setIsDialogOpen(true)}
-          className="flex items-center gap-2 px-5 py-2 text-sm rounded bg-linear-to-br from-blue-500 to-blue-600 text-white space-x-2 hover:opacity-90 transition"
-        >
-          <Plus size={16} /> New Project
-        </button>
+        {isAdmin && (
+          <>
+            <button
+              onClick={() => setIsDialogOpen(true)}
+              className="flex items-center gap-2 px-5 py-2 text-sm rounded bg-linear-to-br from-blue-500 to-blue-600 text-white space-x-2 hover:opacity-90 transition"
+            >
+              <Plus size={16} /> New Project
+            </button>
 
-        <CreateProjectDialog
-          isDialogOpen={isDialogOpen}
-          setIsDialogOpen={setIsDialogOpen}
-        />
+            <CreateProjectDialog
+              isDialogOpen={isDialogOpen}
+              setIsDialogOpen={setIsDialogOpen}
+            />
+          </>
+        )}
       </div>
 
       <StatsGrid />

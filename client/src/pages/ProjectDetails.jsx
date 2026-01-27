@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -25,6 +25,10 @@ export default function ProjectDetail() {
   const projects = useSelector(
     (state) => state?.workspace?.currentWorkspace?.projects || []
   );
+  const currentWorkspace = useSelector(
+    (state) => state.workspace.currentWorkspace
+  );
+  const user = useSelector((state) => state.auth.user);
 
   const [project, setProject] = useState(null);
   const [tasks, setTasks] = useState([]);
@@ -32,8 +36,14 @@ export default function ProjectDetail() {
   const [activeTab, setActiveTab] = useState(tab || 'tasks');
 
   useEffect(() => {
-    if (tab) setActiveTab(tab);
-  }, [tab]);
+    if (!tab) return;
+    if (tab === 'settings' && !isAdmin) {
+      setActiveTab('tasks');
+      setSearchParams({ id: id, tab: 'tasks' });
+      return;
+    }
+    setActiveTab(tab);
+  }, [tab, isAdmin, id, setSearchParams]);
 
   useEffect(() => {
     if (projects && projects.length > 0) {
@@ -42,6 +52,15 @@ export default function ProjectDetail() {
       setTasks(proj?.tasks || []);
     }
   }, [id, projects]);
+
+  const isAdmin = useMemo(() => {
+    const role = currentWorkspace?.members?.find(
+      (m) => m.user.id === user?.id
+    )?.role;
+    return user?.role === 'ADMIN' || role === 'ADMIN';
+  }, [currentWorkspace, user]);
+
+  const canManageTasks = isAdmin || project?.team_lead === user?.id;
 
   const statusColors = {
     PLANNING: 'bg-zinc-200 text-zinc-900 dark:bg-zinc-600 dark:text-zinc-200',
@@ -87,13 +106,15 @@ export default function ProjectDetail() {
             </span>
           </div>
         </div>
-        <button
-          onClick={() => setShowCreateTask(true)}
-          className="flex items-center gap-2 px-5 py-2 text-sm rounded bg-linear-to-br from-blue-500 to-blue-600 text-white"
-        >
-          <PlusIcon className="size-4" />
-          New Task
-        </button>
+        {canManageTasks && (
+          <button
+            onClick={() => setShowCreateTask(true)}
+            className="flex items-center gap-2 px-5 py-2 text-sm rounded bg-linear-to-br from-blue-500 to-blue-600 text-white"
+          >
+            <PlusIcon className="size-4" />
+            New Task
+          </button>
+        )}
       </div>
 
       {/* Info Cards */}
@@ -146,7 +167,9 @@ export default function ProjectDetail() {
             { key: 'tasks', label: 'Tasks', icon: FileStackIcon },
             { key: 'calendar', label: 'Calendar', icon: CalendarIcon },
             { key: 'analytics', label: 'Analytics', icon: BarChart3Icon },
-            { key: 'settings', label: 'Settings', icon: SettingsIcon },
+            ...(isAdmin
+              ? [{ key: 'settings', label: 'Settings', icon: SettingsIcon }]
+              : []),
           ].map((tabItem) => (
             <button
               key={tabItem.key}

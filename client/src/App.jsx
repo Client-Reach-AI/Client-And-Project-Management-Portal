@@ -7,6 +7,7 @@ import Team from './pages/Team';
 import ProjectDetails from './pages/ProjectDetails';
 import TaskDetails from './pages/TaskDetails';
 import Login from './pages/Login';
+import AcceptInvite from './pages/AcceptInvite';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect } from 'react';
 import { loadAuthFromStorage } from './features/authSlice';
@@ -31,6 +32,7 @@ const App = () => {
       <Toaster />
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/accept-invite" element={<AcceptInvite />} />
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="team" element={<Team />} />

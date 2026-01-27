@@ -12,6 +12,11 @@ const Team = () => {
   const currentWorkspace = useSelector(
     (state) => state?.workspace?.currentWorkspace || null
   );
+  const user = useSelector((state) => state.auth.user);
+  const memberRole = currentWorkspace?.members?.find(
+    (m) => m.user.id === user?.id
+  )?.role;
+  const isAdmin = user?.role === 'ADMIN' || memberRole === 'ADMIN';
   const projects = currentWorkspace?.projects || [];
 
   const filteredUsers = users.filter(
@@ -30,6 +35,17 @@ const Team = () => {
     );
   }, [currentWorkspace]);
 
+  if (!isAdmin) {
+    return (
+      <div className="p-6 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-200">
+        <h2 className="text-xl font-semibold">Team Access</h2>
+        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
+          Only workspace admins can manage team members.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       {/* Header */}
@@ -42,16 +58,20 @@ const Team = () => {
             Manage team members and their contributions
           </p>
         </div>
-        <button
-          onClick={() => setIsDialogOpen(true)}
-          className="flex items-center px-5 py-2 rounded text-sm bg-linear-to-br from-blue-500 to-blue-600 hover:opacity-90 text-white transition"
-        >
-          <UserPlus className="w-4 h-4 mr-2" /> Invite Member
-        </button>
-        <InviteMemberDialog
-          isDialogOpen={isDialogOpen}
-          setIsDialogOpen={setIsDialogOpen}
-        />
+        {isAdmin && (
+          <>
+            <button
+              onClick={() => setIsDialogOpen(true)}
+              className="flex items-center px-5 py-2 rounded text-sm bg-linear-to-br from-blue-500 to-blue-600 hover:opacity-90 text-white transition"
+            >
+              <UserPlus className="w-4 h-4 mr-2" /> Invite Member
+            </button>
+            <InviteMemberDialog
+              isDialogOpen={isDialogOpen}
+              setIsDialogOpen={setIsDialogOpen}
+            />
+          </>
+        )}
       </div>
 
       {/* Stats Cards */}

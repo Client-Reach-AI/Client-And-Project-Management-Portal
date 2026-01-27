@@ -1,19 +1,18 @@
 import { useState } from 'react';
 import { Mail, UserPlus } from 'lucide-react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
-import { addWorkspaceMemberThunk } from '../features/workspaceSlice';
-import { createUser, fetchUserByEmail } from '../api';
+import { sendInvitation } from '../api';
 
 const InviteMemberDialog = ({ isDialogOpen, setIsDialogOpen }) => {
   const currentWorkspace = useSelector(
     (state) => state.workspace?.currentWorkspace || null
   );
-  const dispatch = useDispatch();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     role: 'org:member',
+    projectId: '',
   });
 
   const handleSubmit = async (e) => {
@@ -21,29 +20,33 @@ const InviteMemberDialog = ({ isDialogOpen, setIsDialogOpen }) => {
     if (!currentWorkspace) return;
     try {
       setIsSubmitting(true);
-      const existing = await fetchUserByEmail(formData.email);
-      const userId = existing?.id
-        ? existing.id
-        : (
-            await createUser({
-              name: formData.email.split('@')[0],
-              email: formData.email,
-            })
-          ).id;
-
       const role = formData.role === 'org:admin' ? 'ADMIN' : 'MEMBER';
+      const projectId = role === 'MEMBER' ? formData.projectId || null : null;
 
-      await dispatch(
-        addWorkspaceMemberThunk({
-          workspaceId: currentWorkspace.id,
-          payload: { userId, role, message: '' },
-        })
-      ).unwrap();
+      if (role === 'MEMBER' && !projectId) {
+        throw new Error('Select a project for member access');
+      }
 
-      toast.success('Member invited');
+      const result = await sendInvitation({
+        email: formData.email,
+        role,
+        workspaceId: currentWorkspace.id,
+        projectId,
+      });
+
+      if (result?.inviteLink && navigator?.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(result.inviteLink);
+          toast.success('Invitation sent. Link copied.');
+        } catch {
+          toast.success('Invitation sent');
+        }
+      } else {
+        toast.success('Invitation sent');
+      }
       setIsDialogOpen(false);
     } catch (error) {
-      toast.error(error?.message || 'Failed to invite member');
+      toast.error(error?.message || 'Failed to send invite');
     } finally {
       setIsSubmitting(false);
     }
@@ -111,6 +114,28 @@ const InviteMemberDialog = ({ isDialogOpen, setIsDialogOpen }) => {
               <option value="org:admin">Admin</option>
             </select>
           </div>
+
+          {formData.role === 'org:member' && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-900 dark:text-zinc-200">
+                Project Access
+              </label>
+              <select
+                value={formData.projectId}
+                onChange={(e) =>
+                  setFormData({ ...formData, projectId: e.target.value })
+                }
+                className="w-full rounded border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-200 py-2 px-3 mt-1 focus:outline-none focus:border-blue-500 text-sm"
+              >
+                <option value="">Select a project</option>
+                {currentWorkspace?.projects?.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Footer */}
           <div className="flex justify-end gap-3 pt-2">
