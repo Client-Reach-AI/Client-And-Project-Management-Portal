@@ -11,7 +11,6 @@ import {
 } from '../db/schema.js';
 import { generateId } from '../lib/ids.js';
 import { getProjectsForUser, isWorkspaceAdmin } from '../lib/permissions.js';
-import { getProjectsForUser, isWorkspaceAdmin } from '../lib/permissions.js';
 
 const router = Router();
 
@@ -119,7 +118,25 @@ router.get('/', async (req, res, next) => {
   try {
     if (req.user.role === 'ADMIN') {
       const workspaceList = await db.select().from(workspaces);
-      return res.json(workspaceList);
+      const workspaceIds = workspaceList.map((w) => w.id);
+      const memberList = workspaceIds.length
+        ? await db
+            .select()
+            .from(workspaceMembers)
+            .where(inArray(workspaceMembers.workspaceId, workspaceIds))
+        : [];
+
+      const memberCounts = memberList.reduce((acc, member) => {
+        acc[member.workspaceId] = (acc[member.workspaceId] || 0) + 1;
+        return acc;
+      }, {});
+
+      return res.json(
+        workspaceList.map((workspace) => ({
+          ...workspace,
+          memberCount: memberCounts[workspace.id] || 0,
+        }))
+      );
     }
 
     const memberships = await db
@@ -135,7 +152,24 @@ router.get('/', async (req, res, next) => {
       .from(workspaces)
       .where(inArray(workspaces.id, workspaceIds));
 
-    res.json(workspaceList);
+    const memberList = workspaceIds.length
+      ? await db
+          .select()
+          .from(workspaceMembers)
+          .where(inArray(workspaceMembers.workspaceId, workspaceIds))
+      : [];
+
+    const memberCounts = memberList.reduce((acc, member) => {
+      acc[member.workspaceId] = (acc[member.workspaceId] || 0) + 1;
+      return acc;
+    }, {});
+
+    res.json(
+      workspaceList.map((workspace) => ({
+        ...workspace,
+        memberCount: memberCounts[workspace.id] || 0,
+      }))
+    );
   } catch (error) {
     next(error);
   }
