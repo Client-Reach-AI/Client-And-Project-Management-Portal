@@ -33,34 +33,59 @@
 
 ## 🛠️ Tech Stack <a name="-tech-stack"></a>
 
-- **Framework:** ReactJS
-- **Styling:** Tailwind CSS
-- **UI Components:** Lucide React for icons
-- **State Management:** Redux Toolkit
+- **Client:** ReactJS + Vite + Tailwind CSS
+- **Server:** Node.js + Express
+- **Database:** PostgreSQL (Docker)
+- **ORM:** Drizzle
 
 ## 🚀 Getting Started <a name="-getting-started"></a>
 
-First, install the dependencies. We recommend using `npm` for this project.
+This repo is now a monorepo with:
+
+- **client/**: Vite + React frontend
+- **server/**: Express + Drizzle backend
+
+### 1) Install dependencies
 
 ```bash
 npm install
 ```
 
-Then, run the development server:
+### 2) Start Postgres with Docker
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run db:up
 ```
 
-Open [http://localhost:5173](http://localhost:5173) with your browser to see the result.
+### 3) Run migrations and seed data
 
-You can start editing the page by modifying `src/App.jsx`. The page auto-updates as you edit the file.
+```bash
+npm run db:migrate
+npm run db:seed
+```
+
+### 4) Run the backend API
+
+```bash
+npm run dev:server
+```
+
+### 5) Run the frontend
+
+```bash
+npm run dev:client
+```
+
+Open [http://localhost:5173](http://localhost:5173) to see the app. The API runs on [http://localhost:4000](http://localhost:4000).
+
+### Admin Login
+
+Use the seeded admin credentials:
+
+- Email: admin@admin.com
+- Password: Password123
+
+You can start editing the page by modifying client/src/App.jsx. The page auto-updates as you edit the file.
 
 ---
 
