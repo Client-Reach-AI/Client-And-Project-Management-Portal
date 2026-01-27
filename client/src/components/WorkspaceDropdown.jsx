@@ -85,7 +85,13 @@ function WorkspaceDropdown() {
                     {ws.name}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-zinc-400 truncate">
-                    {ws.members?.length || 0} members
+                    {typeof ws.memberCount === 'number'
+                      ? ws.memberCount
+                      : ws.members?.length ||
+                        (currentWorkspace?.id === ws.id
+                          ? currentWorkspace?.members?.length || 0
+                          : 0)}{' '}
+                    members
                   </p>
                 </div>
                 {currentWorkspace?.id === ws.id && (
