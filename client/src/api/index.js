@@ -11,6 +11,18 @@ export const fetchWorkspaces = async () => apiFetch('/api/workspaces');
 export const fetchWorkspaceById = async (id) =>
   apiFetch(`/api/workspaces/${id}`);
 
+export const createWorkspace = async (payload) =>
+  apiFetch('/api/workspaces', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
+export const updateWorkspace = async (id, payload) =>
+  apiFetch(`/api/workspaces/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+
 export const createProject = async (payload) =>
   apiFetch('/api/projects', {
     method: 'POST',
@@ -53,6 +65,12 @@ export const fetchUserByEmail = async (email) =>
 export const createUser = async (payload) =>
   apiFetch('/api/users', {
     method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
+export const updateUser = async (id, payload) =>
+  apiFetch(`/api/users/${id}`, {
+    method: 'PATCH',
     body: JSON.stringify(payload),
   });
 

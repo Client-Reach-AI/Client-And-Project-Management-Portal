@@ -6,6 +6,7 @@ import Projects from './pages/Projects';
 import Team from './pages/Team';
 import ProjectDetails from './pages/ProjectDetails';
 import TaskDetails from './pages/TaskDetails';
+import Settings from './pages/Settings';
 import Login from './pages/Login';
 import AcceptInvite from './pages/AcceptInvite';
 import { useDispatch, useSelector } from 'react-redux';
@@ -39,6 +40,7 @@ const App = () => {
           <Route path="projects" element={<Projects />} />
           <Route path="projectsDetail" element={<ProjectDetails />} />
           <Route path="taskDetails" element={<TaskDetails />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
     </>

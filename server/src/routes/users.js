@@ -71,4 +71,34 @@ router.post('/', async (req, res, next) => {
   }
 });
 
+router.patch('/:id', async (req, res, next) => {
+  try {
+    if (req.user.id !== req.params.id && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    const { name, image } = req.body;
+    if (!name) {
+      return res.status(400).json({ message: 'name is required' });
+    }
+
+    await db
+      .update(users)
+      .set({ name, image: image || null, updatedAt: new Date() })
+      .where(eq(users.id, req.params.id));
+
+    const [updated] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, req.params.id))
+      .limit(1);
+
+    if (!updated) return res.status(404).json({ message: 'User not found' });
+
+    res.json(stripSensitive(updated));
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

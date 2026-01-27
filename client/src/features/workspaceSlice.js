@@ -2,12 +2,14 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import {
   addProjectMember,
   addWorkspaceMember,
+  createWorkspace,
   createProject,
   createTask,
   deleteTask as deleteTaskRequest,
   fetchWorkspaceById,
   fetchWorkspaces,
   updateProject,
+  updateWorkspace as updateWorkspaceRequest,
   updateTask as updateTaskRequest,
 } from '../api';
 
@@ -49,10 +51,27 @@ export const createProjectThunk = createAsyncThunk(
   }
 );
 
+export const createWorkspaceThunk = createAsyncThunk(
+  'workspace/createWorkspace',
+  async (payload) => {
+    const created = await createWorkspace(payload);
+    const list = await fetchWorkspaces();
+    return { list, currentWorkspace: created };
+  }
+);
+
 export const updateProjectThunk = createAsyncThunk(
   'workspace/updateProject',
   async ({ workspaceId, projectId, payload }) => {
     await updateProject(projectId, payload);
+    return fetchWorkspaceById(workspaceId);
+  }
+);
+
+export const updateWorkspaceThunk = createAsyncThunk(
+  'workspace/updateWorkspace',
+  async ({ workspaceId, payload }) => {
+    await updateWorkspaceRequest(workspaceId, payload);
     return fetchWorkspaceById(workspaceId);
   }
 );
@@ -245,6 +264,36 @@ const workspaceSlice = createSlice({
         }
       })
       .addCase(loadWorkspaceById.rejected, (state) => {
+        state.loading = false;
+      })
+      .addCase(createWorkspaceThunk.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(createWorkspaceThunk.fulfilled, (state, action) => {
+        state.loading = false;
+        state.workspaces = action.payload.list;
+        state.currentWorkspace = action.payload.currentWorkspace;
+        if (action.payload.currentWorkspace?.id) {
+          localStorage.setItem(
+            'currentWorkspaceId',
+            action.payload.currentWorkspace.id
+          );
+        }
+      })
+      .addCase(createWorkspaceThunk.rejected, (state) => {
+        state.loading = false;
+      })
+      .addCase(updateWorkspaceThunk.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(updateWorkspaceThunk.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentWorkspace = action.payload;
+        state.workspaces = state.workspaces.map((w) =>
+          w.id === action.payload.id ? action.payload : w
+        );
+      })
+      .addCase(updateWorkspaceThunk.rejected, (state) => {
         state.loading = false;
       })
       .addCase(createProjectThunk.fulfilled, (state, action) => {
