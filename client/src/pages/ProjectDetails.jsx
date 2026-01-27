@@ -15,6 +15,7 @@ import ProjectSettings from '../components/ProjectSettings';
 import CreateTaskDialog from '../components/CreateTaskDialog';
 import ProjectCalendar from '../components/ProjectCalendar';
 import ProjectTasks from '../components/ProjectTasks';
+import { fetchProjectById } from '../api';
 
 export default function ProjectDetail() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -34,6 +35,14 @@ export default function ProjectDetail() {
   const [tasks, setTasks] = useState([]);
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [activeTab, setActiveTab] = useState(tab || 'tasks');
+  const [loading, setLoading] = useState(true);
+
+  const isAdmin = useMemo(() => {
+    const role = currentWorkspace?.members?.find(
+      (m) => m.user.id === user?.id
+    )?.role;
+    return user?.role === 'ADMIN' || role === 'ADMIN';
+  }, [currentWorkspace, user]);
 
   useEffect(() => {
     if (!tab) return;
@@ -46,19 +55,50 @@ export default function ProjectDetail() {
   }, [tab, isAdmin, id, setSearchParams]);
 
   useEffect(() => {
-    if (projects && projects.length > 0) {
-      const proj = projects.find((p) => p.id === id);
-      setProject(proj);
-      setTasks(proj?.tasks || []);
-    }
-  }, [id, projects]);
+    let isMounted = true;
 
-  const isAdmin = useMemo(() => {
-    const role = currentWorkspace?.members?.find(
-      (m) => m.user.id === user?.id
-    )?.role;
-    return user?.role === 'ADMIN' || role === 'ADMIN';
-  }, [currentWorkspace, user]);
+    const loadProject = async () => {
+      if (!id) {
+        if (isMounted) {
+          setProject(null);
+          setTasks([]);
+          setLoading(false);
+        }
+        return;
+      }
+
+      const localProject = projects.find((p) => p.id === id);
+      if (localProject) {
+        if (isMounted) {
+          setProject(localProject);
+          setTasks(localProject?.tasks || []);
+          setLoading(false);
+        }
+        return;
+      }
+
+      try {
+        const remoteProject = await fetchProjectById(id);
+        if (isMounted) {
+          setProject(remoteProject || null);
+          setTasks(remoteProject?.tasks || []);
+          setLoading(false);
+        }
+      } catch {
+        if (isMounted) {
+          setProject(null);
+          setTasks([]);
+          setLoading(false);
+        }
+      }
+    };
+
+    loadProject();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id, projects]);
 
   const canManageTasks = isAdmin || project?.team_lead === user?.id;
 
@@ -71,6 +111,14 @@ export default function ProjectDetail() {
     COMPLETED: 'bg-blue-200 text-blue-900 dark:bg-blue-500 dark:text-blue-900',
     CANCELLED: 'bg-red-200 text-red-900 dark:bg-red-500 dark:text-red-900',
   };
+
+  if (loading) {
+    return (
+      <div className="p-6 text-center text-zinc-900 dark:text-zinc-200">
+        Loading project...
+      </div>
+    );
+  }
 
   if (!project) {
     return (

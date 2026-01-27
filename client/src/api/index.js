@@ -29,6 +29,8 @@ export const createProject = async (payload) =>
     body: JSON.stringify(payload),
   });
 
+export const fetchProjectById = async (id) => apiFetch(`/api/projects/${id}`);
+
 export const updateProject = async (id, payload) =>
   apiFetch(`/api/projects/${id}`, {
     method: 'PATCH',
