@@ -56,7 +56,17 @@ router.get('/:id', async (req, res, next) => {
       }
     }
 
-    res.json(task);
+    let assignee = null;
+    if (task.assigneeId) {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, task.assigneeId))
+        .limit(1);
+      assignee = stripSensitive(user || null);
+    }
+
+    res.json({ ...task, assignee });
   } catch (error) {
     next(error);
   }

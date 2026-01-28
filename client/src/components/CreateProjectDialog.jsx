@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { XIcon } from 'lucide-react';
-import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
-import { createProjectThunk } from '../features/workspaceSlice';
-import { createUser, fetchUserByEmail } from '../api';
+import { useCreateProject } from '../hooks/useMutations';
+import { useWorkspaceContext } from '../context/workspaceContext';
 
 const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
-  const { currentWorkspace } = useSelector((state) => state.workspace);
-  const dispatch = useDispatch();
+  const { currentWorkspace } = useWorkspaceContext();
+  const { mutateAsync: createProject, isPending } = useCreateProject();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -30,42 +29,21 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
     try {
       setIsSubmitting(true);
 
-      const uniqueEmails = Array.from(new Set(formData.team_members));
-
-      const userIds = await Promise.all(
-        uniqueEmails.map(async (email) => {
-          const existing = await fetchUserByEmail(email);
-          if (existing?.id) return existing.id;
-
-          const name = email.split('@')[0];
-          const created = await createUser({ name, email });
-          return created.id;
-        })
-      );
-
-      let teamLeadId = null;
-      if (formData.team_lead) {
-        const lead = await fetchUserByEmail(formData.team_lead);
-        if (lead?.id) teamLeadId = lead.id;
-      }
-
-      await dispatch(
-        createProjectThunk({
+      await createProject({
+        workspaceId: currentWorkspace.id,
+        payload: {
           workspaceId: currentWorkspace.id,
-          payload: {
-            workspaceId: currentWorkspace.id,
-            name: formData.name,
-            description: formData.description,
-            status: formData.status,
-            priority: formData.priority,
-            start_date: formData.start_date || null,
-            end_date: formData.end_date || null,
-            team_lead: teamLeadId,
-            progress: Number(formData.progress) || 0,
-            team_members: userIds,
-          },
-        })
-      ).unwrap();
+          name: formData.name,
+          description: formData.description,
+          status: formData.status,
+          priority: formData.priority,
+          start_date: formData.start_date || null,
+          end_date: formData.end_date || null,
+          progress: Number(formData.progress) || 0,
+        },
+        teamMemberEmails: formData.team_members,
+        teamLeadEmail: formData.team_lead || null,
+      });
 
       toast.success('Project created');
       setIsDialogOpen(false);
@@ -284,10 +262,11 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
               Cancel
             </button>
             <button
-              disabled={isSubmitting || !currentWorkspace}
+              type="submit"
+              disabled={isSubmitting || isPending || !currentWorkspace}
               className="px-4 py-2 rounded bg-linear-to-br from-blue-500 to-blue-600 text-white dark:text-zinc-200"
             >
-              {isSubmitting ? 'Creating...' : 'Create Project'}
+              {isSubmitting || isPending ? 'Creating...' : 'Create Project'}
             </button>
           </div>
         </form>

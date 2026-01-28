@@ -10,12 +10,11 @@ import {
   SettingsIcon,
   UsersIcon,
 } from 'lucide-react';
+import { useWorkspaceContext } from '../context/workspaceContext';
 
 const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const user = useSelector((state) => state.auth.user);
-  const currentWorkspace = useSelector(
-    (state) => state.workspace.currentWorkspace
-  );
+  const { currentWorkspace } = useWorkspaceContext();
   const memberRole = currentWorkspace?.members?.find(
     (m) => m.user.id === user?.id
   )?.role;

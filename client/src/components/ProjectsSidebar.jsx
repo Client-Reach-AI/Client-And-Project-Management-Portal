@@ -9,6 +9,7 @@ import {
   ArrowRightIcon,
 } from 'lucide-react';
 import { useSelector } from 'react-redux';
+import { useWorkspaceContext } from '../context/workspaceContext';
 
 const ProjectSidebar = () => {
   const location = useLocation();
@@ -16,12 +17,8 @@ const ProjectSidebar = () => {
   const [expandedProjects, setExpandedProjects] = useState(new Set());
   const [searchParams] = useSearchParams();
 
-  const projects = useSelector(
-    (state) => state?.workspace?.currentWorkspace?.projects || []
-  );
-  const currentWorkspace = useSelector(
-    (state) => state.workspace.currentWorkspace
-  );
+  const { currentWorkspace } = useWorkspaceContext();
+  const projects = currentWorkspace?.projects || [];
   const user = useSelector((state) => state.auth.user);
   const memberRole = currentWorkspace?.members?.find(
     (m) => m.user.id === user?.id

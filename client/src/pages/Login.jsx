@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { loginThunk } from '../features/authSlice';
+import { setAuth } from '../features/authSlice';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { useLogin } from '../hooks/useMutations';
 
 const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { loading, user } = useSelector((state) => state.auth);
+  const { user } = useSelector((state) => state.auth);
+  const { mutateAsync: login, isPending } = useLogin();
   const [formData, setFormData] = useState({
     email: 'admin@admin.com',
     password: 'Password123',
@@ -16,10 +18,12 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const result = await dispatch(
-        loginThunk({ email: formData.email, password: formData.password })
-      ).unwrap();
+      const result = await login({
+        email: formData.email,
+        password: formData.password,
+      });
       if (result?.token) {
+        dispatch(setAuth(result));
         toast.success('Logged in successfully');
         navigate('/');
       }
@@ -79,10 +83,10 @@ const Login = () => {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={isPending}
             className="w-full px-4 py-2 rounded bg-linear-to-br from-blue-500 to-blue-600 text-white text-sm"
           >
-            {loading ? 'Signing in...' : 'Sign in'}
+            {isPending ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
       </div>

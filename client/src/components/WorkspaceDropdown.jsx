@@ -1,33 +1,28 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Check, Plus } from 'lucide-react';
-import { useDispatch, useSelector } from 'react-redux';
-import {
-  loadWorkspaceById,
-  setCurrentWorkspace,
-} from '../features/workspaceSlice';
+import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { assets } from '../assets/assets';
 import CreateWorkspaceDialog from './CreateWorkspaceDialog';
+import { useWorkspaceContext } from '../context/workspaceContext';
 
 function WorkspaceDropdown() {
-  const { workspaces } = useSelector((state) => state.workspace);
   const user = useSelector((state) => state.auth.user);
-  const currentWorkspace = useSelector(
-    (state) => state.workspace?.currentWorkspace || null
-  );
+  const { workspaces, currentWorkspace, setCurrentWorkspaceId } =
+    useWorkspaceContext();
   const [isOpen, setIsOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const dropdownRef = useRef(null);
-
-  const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const canCreate = user?.role === 'ADMIN';
+  const memberRole = currentWorkspace?.members?.find(
+    (member) => member.user.id === user?.id
+  )?.role;
+  const canCreate = user?.role === 'ADMIN' || memberRole === 'ADMIN';
   const canSwitch = canCreate || workspaces.length > 1;
 
   const onSelectWorkspace = (organizationId) => {
-    dispatch(setCurrentWorkspace(organizationId));
-    dispatch(loadWorkspaceById(organizationId));
+    setCurrentWorkspaceId(organizationId);
     setIsOpen(false);
     navigate('/');
   };

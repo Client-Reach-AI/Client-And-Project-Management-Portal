@@ -1,57 +1,41 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { acceptInvitation, lookupInvitation } from '../api';
 import toast from 'react-hot-toast';
 import { useDispatch } from 'react-redux';
-import { loginThunk } from '../features/authSlice';
+import { setAuth } from '../features/authSlice';
+import { useInvitationLookup } from '../hooks/useQueries';
+import { useAcceptInvitation } from '../hooks/useMutations';
 
 const AcceptInvite = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const token = searchParams.get('token');
-
-  const [loading, setLoading] = useState(true);
-  const [invite, setInvite] = useState(null);
+  const {
+    data: invite,
+    isLoading,
+    isError,
+  } = useInvitationLookup(token, {
+    enabled: Boolean(token),
+    retry: false,
+  });
+  const { mutateAsync: acceptInvite, isPending } = useAcceptInvitation();
   const [formData, setFormData] = useState({
     name: '',
     password: '',
   });
 
-  useEffect(() => {
-    const loadInvite = async () => {
-      if (!token) {
-        toast.error('Invalid invite link');
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const data = await lookupInvitation(token);
-        setInvite(data);
-        setLoading(false);
-      } catch (error) {
-        toast.error(error?.message || 'Invite not found');
-        setLoading(false);
-      }
-    };
-
-    loadInvite();
-  }, [token]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const result = await acceptInvitation({
+      const result = await acceptInvite({
         token,
         password: formData.password,
         name: formData.name,
       });
       if (result?.token) {
         toast.success('Account created');
-        await dispatch(
-          loginThunk({ email: result.user.email, password: formData.password })
-        ).unwrap();
+        dispatch(setAuth(result));
         navigate('/');
       }
     } catch (error) {
@@ -59,7 +43,15 @@ const AcceptInvite = () => {
     }
   };
 
-  if (loading) {
+  if (!token) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Invalid invite link.
+      </div>
+    );
+  }
+
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         Loading...
@@ -67,7 +59,7 @@ const AcceptInvite = () => {
     );
   }
 
-  if (!invite) {
+  if (isError || !invite) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         Invite invalid.
@@ -118,9 +110,10 @@ const AcceptInvite = () => {
 
           <button
             type="submit"
+            disabled={isPending}
             className="w-full px-4 py-2 rounded bg-linear-to-br from-blue-500 to-blue-600 text-white text-sm"
           >
-            Create Account
+            {isPending ? 'Creating...' : 'Create Account'}
           </button>
         </form>
       </div>

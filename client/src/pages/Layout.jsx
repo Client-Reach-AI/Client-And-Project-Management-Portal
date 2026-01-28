@@ -5,11 +5,12 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { loadTheme } from '../features/themeSlice';
 import { Loader2Icon } from 'lucide-react';
+import { useWorkspaceContext } from '../context/workspaceContext';
 
 const Layout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { loading } = useSelector((state) => state.workspace);
   const { user, initialized } = useSelector((state) => state.auth);
+  const { loading } = useWorkspaceContext();
   const dispatch = useDispatch();
 
   // Initial load of theme

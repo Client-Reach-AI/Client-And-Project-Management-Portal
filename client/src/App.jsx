@@ -9,24 +9,16 @@ import TaskDetails from './pages/TaskDetails';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import AcceptInvite from './pages/AcceptInvite';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { useEffect } from 'react';
 import { loadAuthFromStorage } from './features/authSlice';
-import { loadWorkspaces } from './features/workspaceSlice';
 
 const App = () => {
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
 
   useEffect(() => {
     dispatch(loadAuthFromStorage());
   }, [dispatch]);
-
-  useEffect(() => {
-    if (user) {
-      dispatch(loadWorkspaces());
-    }
-  }, [dispatch, user]);
 
   return (
     <>

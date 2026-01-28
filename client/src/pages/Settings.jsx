@@ -1,12 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  updateWorkspaceThunk,
-  loadWorkspaceById,
-} from '../features/workspaceSlice';
-import { updateUser } from '../api';
 import { updateUser as updateUserAction } from '../features/authSlice';
 import toast from 'react-hot-toast';
+import { useUpdateUser, useUpdateWorkspace } from '../hooks/useMutations';
+import { useWorkspaceContext } from '../context/workspaceContext';
 
 const slugify = (value) =>
   value
@@ -18,10 +15,11 @@ const slugify = (value) =>
 
 const Settings = () => {
   const dispatch = useDispatch();
-  const currentWorkspace = useSelector(
-    (state) => state.workspace.currentWorkspace
-  );
+  const { currentWorkspace } = useWorkspaceContext();
   const user = useSelector((state) => state.auth.user);
+  const { mutateAsync: updateWorkspace, isPending: workspacePending } =
+    useUpdateWorkspace();
+  const { mutateAsync: updateUser, isPending: userPending } = useUpdateUser();
 
   const isAdmin = useMemo(() => {
     const role = currentWorkspace?.members?.find(
@@ -72,17 +70,15 @@ const Settings = () => {
 
     try {
       setIsSubmitting(true);
-      await dispatch(
-        updateWorkspaceThunk({
-          workspaceId: currentWorkspace.id,
-          payload: {
-            name: formData.name,
-            slug: formData.slug || slugify(formData.name),
-            description: formData.description || null,
-            image_url: formData.image_url || null,
-          },
-        })
-      ).unwrap();
+      await updateWorkspace({
+        workspaceId: currentWorkspace.id,
+        payload: {
+          name: formData.name,
+          slug: formData.slug || slugify(formData.name),
+          description: formData.description || null,
+          image_url: formData.image_url || null,
+        },
+      });
       toast.success('Workspace updated');
     } catch (error) {
       toast.error(error?.message || 'Failed to update workspace');
@@ -97,14 +93,15 @@ const Settings = () => {
 
     try {
       setIsSubmitting(true);
-      const updated = await updateUser(user.id, {
-        name: profileData.name,
-        image: profileData.image || null,
+      const updated = await updateUser({
+        userId: user.id,
+        workspaceId: currentWorkspace?.id,
+        payload: {
+          name: profileData.name,
+          image: profileData.image || null,
+        },
       });
       dispatch(updateUserAction(updated));
-      if (currentWorkspace?.id) {
-        dispatch(loadWorkspaceById(currentWorkspace.id));
-      }
       toast.success('Profile updated');
     } catch (error) {
       toast.error(error?.message || 'Failed to update profile');
@@ -171,10 +168,10 @@ const Settings = () => {
           <div className="flex justify-end">
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || userPending}
               className="px-5 py-2 rounded text-sm bg-linear-to-br from-blue-500 to-blue-600 text-white disabled:opacity-50 hover:opacity-90 transition"
             >
-              {isSubmitting ? 'Saving...' : 'Save Profile'}
+              {isSubmitting || userPending ? 'Saving...' : 'Save Profile'}
             </button>
           </div>
         </form>
@@ -253,10 +250,12 @@ const Settings = () => {
               </div>
               <button
                 type="submit"
-                disabled={isSubmitting || !hasChanges}
+                disabled={isSubmitting || workspacePending || !hasChanges}
                 className="px-5 py-2 rounded text-sm bg-linear-to-br from-blue-500 to-blue-600 text-white disabled:opacity-50 hover:opacity-90 transition"
               >
-                {isSubmitting ? 'Saving...' : 'Save Changes'}
+                {isSubmitting || workspacePending
+                  ? 'Saving...'
+                  : 'Save Changes'}
               </button>
             </div>
           </form>

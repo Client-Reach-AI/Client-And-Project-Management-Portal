@@ -1,20 +1,17 @@
 import { useState } from 'react';
 import { Mail, UserPlus } from 'lucide-react';
-import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { addProjectMemberThunk } from '../features/workspaceSlice';
-import { fetchUserByEmail } from '../api';
+import { useAddProjectMember } from '../hooks/useMutations';
+import { useWorkspaceContext } from '../context/workspaceContext';
 
 const AddProjectMember = ({ isDialogOpen, setIsDialogOpen }) => {
   const [searchParams] = useSearchParams();
 
   const id = searchParams.get('id');
 
-  const currentWorkspace = useSelector(
-    (state) => state.workspace?.currentWorkspace || null
-  );
-  const dispatch = useDispatch();
+  const { currentWorkspace } = useWorkspaceContext();
+  const { mutateAsync: addProjectMember, isPending } = useAddProjectMember();
 
   const project = currentWorkspace?.projects.find((p) => p.id === id);
   const projectMembersEmails =
@@ -28,16 +25,11 @@ const AddProjectMember = ({ isDialogOpen, setIsDialogOpen }) => {
     if (!currentWorkspace || !project) return;
     try {
       setIsAdding(true);
-      const user = await fetchUserByEmail(email);
-      if (!user?.id) throw new Error('User not found');
-
-      await dispatch(
-        addProjectMemberThunk({
-          workspaceId: currentWorkspace.id,
-          projectId: project.id,
-          payload: { userId: user.id },
-        })
-      ).unwrap();
+      await addProjectMember({
+        workspaceId: currentWorkspace.id,
+        projectId: project.id,
+        email,
+      });
 
       toast.success('Member added');
       setIsDialogOpen(false);
@@ -115,10 +107,10 @@ const AddProjectMember = ({ isDialogOpen, setIsDialogOpen }) => {
             </button>
             <button
               type="submit"
-              disabled={isAdding || !currentWorkspace}
+              disabled={isAdding || isPending || !currentWorkspace}
               className="px-5 py-2 text-sm rounded bg-linear-to-br from-blue-500 to-blue-600 hover:opacity-90 text-white disabled:opacity-50 transition"
             >
-              {isAdding ? 'Adding...' : 'Add Member'}
+              {isAdding || isPending ? 'Adding...' : 'Add Member'}
             </button>
           </div>
         </form>

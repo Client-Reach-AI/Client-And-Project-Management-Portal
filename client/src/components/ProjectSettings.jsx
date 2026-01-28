@@ -2,9 +2,10 @@ import { format } from 'date-fns';
 import { Plus, Save } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import AddProjectMember from './AddProjectMember';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
-import { updateProjectThunk } from '../features/workspaceSlice';
+import { useUpdateProject } from '../hooks/useMutations';
+import { useWorkspaceContext } from '../context/workspaceContext';
 
 export default function ProjectSettings({ project }) {
   const [formData, setFormData] = useState({
@@ -19,11 +20,9 @@ export default function ProjectSettings({ project }) {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
-  const currentWorkspace = useSelector(
-    (state) => state.workspace.currentWorkspace
-  );
+  const { currentWorkspace } = useWorkspaceContext();
+  const { mutateAsync: updateProject, isPending } = useUpdateProject();
   const memberRole = currentWorkspace?.members?.find(
     (m) => m.user.id === user?.id
   )?.role;
@@ -34,25 +33,23 @@ export default function ProjectSettings({ project }) {
     if (!currentWorkspace || !project) return;
     try {
       setIsSubmitting(true);
-      await dispatch(
-        updateProjectThunk({
-          workspaceId: currentWorkspace.id,
-          projectId: project.id,
-          payload: {
-            name: formData.name,
-            description: formData.description,
-            status: formData.status,
-            priority: formData.priority,
-            start_date: formData.start_date
-              ? new Date(formData.start_date).toISOString()
-              : null,
-            end_date: formData.end_date
-              ? new Date(formData.end_date).toISOString()
-              : null,
-            progress: Number(formData.progress),
-          },
-        })
-      ).unwrap();
+      await updateProject({
+        workspaceId: currentWorkspace?.id,
+        projectId: project.id,
+        payload: {
+          name: formData.name,
+          description: formData.description,
+          status: formData.status,
+          priority: formData.priority,
+          start_date: formData.start_date
+            ? new Date(formData.start_date).toISOString()
+            : null,
+          end_date: formData.end_date
+            ? new Date(formData.end_date).toISOString()
+            : null,
+          progress: Number(formData.progress),
+        },
+      });
       toast.success('Project updated');
     } catch (error) {
       toast.error(error?.message || 'Failed to update project');
@@ -192,11 +189,11 @@ export default function ProjectSettings({ project }) {
             {isAdmin && (
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isPending}
                 className="ml-auto flex items-center text-sm justify-center gap-2 bg-linear-to-br from-blue-500 to-blue-600 text-white px-4 py-2 rounded"
               >
                 <Save className="size-4" />{' '}
-                {isSubmitting ? 'Saving...' : 'Save Changes'}
+                {isSubmitting || isPending ? 'Saving...' : 'Save Changes'}
               </button>
             )}
           </div>
@@ -204,11 +201,11 @@ export default function ProjectSettings({ project }) {
           {/* Save Button */}
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isPending}
             className="ml-auto flex items-center text-sm justify-center gap-2 bg-linear-to-br from-blue-500 to-blue-600 text-white px-4 py-2 rounded"
           >
             <Save className="size-4" />{' '}
-            {isSubmitting ? 'Saving...' : 'Save Changes'}
+            {isSubmitting || isPending ? 'Saving...' : 'Save Changes'}
           </button>
         </form>
       </div>

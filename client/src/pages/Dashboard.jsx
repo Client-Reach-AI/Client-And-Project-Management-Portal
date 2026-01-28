@@ -6,12 +6,11 @@ import RecentActivity from '../components/RecentActivity';
 import TasksSummary from '../components/TasksSummary';
 import CreateProjectDialog from '../components/CreateProjectDialog';
 import { useSelector } from 'react-redux';
+import { useWorkspaceContext } from '../context/workspaceContext';
 
 const Dashboard = () => {
   const user = useSelector((state) => state.auth.user);
-  const currentWorkspace = useSelector(
-    (state) => state.workspace.currentWorkspace
-  );
+  const { currentWorkspace } = useWorkspaceContext();
   const memberRole = currentWorkspace?.members?.find(
     (m) => m.user.id === user?.id
   )?.role;

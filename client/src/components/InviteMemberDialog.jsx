@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { Mail, UserPlus } from 'lucide-react';
-import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
-import { sendInvitation } from '../api';
+import { useSendInvitation } from '../hooks/useMutations';
+import { useWorkspaceContext } from '../context/workspaceContext';
 
 const InviteMemberDialog = ({ isDialogOpen, setIsDialogOpen }) => {
-  const currentWorkspace = useSelector(
-    (state) => state.workspace?.currentWorkspace || null
-  );
+  const { currentWorkspace } = useWorkspaceContext();
+  const { mutateAsync: sendInvitation, isPending } = useSendInvitation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -148,10 +147,10 @@ const InviteMemberDialog = ({ isDialogOpen, setIsDialogOpen }) => {
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || !currentWorkspace}
+              disabled={isSubmitting || isPending || !currentWorkspace}
               className="px-5 py-2 rounded text-sm bg-linear-to-br from-blue-500 to-blue-600 text-white disabled:opacity-50 hover:opacity-90 transition"
             >
-              {isSubmitting ? 'Sending...' : 'Send Invitation'}
+              {isSubmitting || isPending ? 'Sending...' : 'Send Invitation'}
             </button>
           </div>
         </form>

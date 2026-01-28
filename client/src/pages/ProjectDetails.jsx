@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -15,7 +15,8 @@ import ProjectSettings from '../components/ProjectSettings';
 import CreateTaskDialog from '../components/CreateTaskDialog';
 import ProjectCalendar from '../components/ProjectCalendar';
 import ProjectTasks from '../components/ProjectTasks';
-import { fetchProjectById } from '../api';
+import { useWorkspaceContext } from '../context/workspaceContext';
+import { useProject } from '../hooks/useQueries';
 
 export default function ProjectDetail() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -23,19 +24,15 @@ export default function ProjectDetail() {
   const id = searchParams.get('id');
 
   const navigate = useNavigate();
-  const projects = useSelector(
-    (state) => state?.workspace?.currentWorkspace?.projects || []
-  );
-  const currentWorkspace = useSelector(
-    (state) => state.workspace.currentWorkspace
-  );
+  const { currentWorkspace } = useWorkspaceContext();
   const user = useSelector((state) => state.auth.user);
 
-  const [project, setProject] = useState(null);
-  const [tasks, setTasks] = useState([]);
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [activeTab, setActiveTab] = useState(tab || 'tasks');
-  const [loading, setLoading] = useState(true);
+  const { data: project, isLoading } = useProject(id, {
+    enabled: Boolean(id),
+  });
+  const tasks = project?.tasks || [];
 
   const isAdmin = useMemo(() => {
     const role = currentWorkspace?.members?.find(
@@ -54,52 +51,6 @@ export default function ProjectDetail() {
     setActiveTab(tab);
   }, [tab, isAdmin, id, setSearchParams]);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadProject = async () => {
-      if (!id) {
-        if (isMounted) {
-          setProject(null);
-          setTasks([]);
-          setLoading(false);
-        }
-        return;
-      }
-
-      const localProject = projects.find((p) => p.id === id);
-      if (localProject) {
-        if (isMounted) {
-          setProject(localProject);
-          setTasks(localProject?.tasks || []);
-          setLoading(false);
-        }
-        return;
-      }
-
-      try {
-        const remoteProject = await fetchProjectById(id);
-        if (isMounted) {
-          setProject(remoteProject || null);
-          setTasks(remoteProject?.tasks || []);
-          setLoading(false);
-        }
-      } catch {
-        if (isMounted) {
-          setProject(null);
-          setTasks([]);
-          setLoading(false);
-        }
-      }
-    };
-
-    loadProject();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [id, projects]);
-
   const canManageTasks = isAdmin || project?.team_lead === user?.id;
 
   const statusColors = {
@@ -112,7 +63,7 @@ export default function ProjectDetail() {
     CANCELLED: 'bg-red-200 text-red-900 dark:bg-red-500 dark:text-red-900',
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="p-6 text-center text-zinc-900 dark:text-zinc-200">
         Loading project...

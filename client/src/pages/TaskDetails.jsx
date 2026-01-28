@@ -1,16 +1,13 @@
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { useSelector } from 'react-redux';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CalendarIcon, MessageCircle, PenIcon } from 'lucide-react';
 import { assets } from '../assets/assets';
-import {
-  addTaskComment,
-  fetchProjectById,
-  fetchTaskById,
-  fetchTaskComments,
-} from '../api';
+import { useWorkspaceContext } from '../context/workspaceContext';
+import { useProject, useTask, useTaskComments } from '../hooks/useQueries';
+import { useAddTaskComment } from '../hooks/useMutations';
 
 const TaskDetails = () => {
   const [searchParams] = useSearchParams();
@@ -18,64 +15,18 @@ const TaskDetails = () => {
   const taskId = searchParams.get('taskId');
 
   const user = useSelector((state) => state.auth.user);
-  const [task, setTask] = useState(null);
-  const [project, setProject] = useState(null);
-  const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
-  const [loading, setLoading] = useState(true);
-
-  const { currentWorkspace } = useSelector((state) => state.workspace);
-
-  const fetchComments = async () => {
-    if (!taskId) return;
-    try {
-      const list = await fetchTaskComments(taskId);
-      setComments(list || []);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const fetchTaskDetails = async () => {
-    setLoading(true);
-    if (!projectId || !taskId) {
-      setTask(null);
-      setProject(null);
-      setLoading(false);
-      return;
-    }
-
-    const localProject = currentWorkspace?.projects?.find(
-      (p) => p.id === projectId
-    );
-    const localTask = localProject?.tasks?.find((t) => t.id === taskId);
-
-    if (localProject && localTask) {
-      setTask(localTask);
-      setProject(localProject);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const [projectData, taskData] = await Promise.all([
-        fetchProjectById(projectId),
-        fetchTaskById(taskId),
-      ]);
-
-      const remoteTask =
-        projectData?.tasks?.find((t) => t.id === taskId) || taskData || null;
-
-      setProject(projectData || null);
-      setTask(remoteTask);
-      setLoading(false);
-    } catch (error) {
-      console.error(error);
-      setTask(null);
-      setProject(null);
-      setLoading(false);
-    }
-  };
+  const { currentWorkspace } = useWorkspaceContext();
+  const { data: task, isLoading: taskLoading } = useTask(taskId, {
+    enabled: Boolean(taskId),
+  });
+  const { data: project, isLoading: projectLoading } = useProject(projectId, {
+    enabled: Boolean(projectId),
+  });
+  const { data: comments = [] } = useTaskComments(taskId, {
+    enabled: Boolean(taskId),
+  });
+  const { mutateAsync: addComment } = useAddTaskComment();
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
@@ -85,12 +36,13 @@ const TaskDetails = () => {
 
       if (!user?.id) throw new Error('You must be logged in');
 
-      const created = await addTaskComment(taskId, {
-        userId: user?.id,
-        content: newComment,
+      await addComment({
+        taskId,
+        payload: {
+          userId: user?.id,
+          content: newComment,
+        },
       });
-
-      setComments((prev) => [...prev, created]);
       setNewComment('');
       toast.dismissAll();
       toast.success('Comment added.');
@@ -101,26 +53,19 @@ const TaskDetails = () => {
     }
   };
 
-  useEffect(() => {
-    fetchTaskDetails();
-  }, [taskId, projectId, currentWorkspace]);
-
-  useEffect(() => {
-    if (taskId && task) {
-      fetchComments();
-      const interval = setInterval(() => {
-        fetchComments();
-      }, 10000);
-      return () => clearInterval(interval);
-    }
-  }, [taskId, task]);
-
-  if (loading)
+  if (taskLoading || projectLoading)
     return (
       <div className="text-gray-500 dark:text-zinc-400 px-4 py-6">
         Loading task details...
       </div>
     );
+  const resolvedAssignee =
+    task?.assignee ||
+    project?.members?.find((m) => m.user?.id === task?.assigneeId)?.user ||
+    currentWorkspace?.members?.find((m) => m.user?.id === task?.assigneeId)
+      ?.user ||
+    null;
+
   if (!task)
     return <div className="text-red-500 px-4 py-6">Task not found.</div>;
 
@@ -223,11 +168,13 @@ const TaskDetails = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700 dark:text-zinc-300">
             <div className="flex items-center gap-2">
               <img
-                src={task.assignee?.image || assets.profile_img_a}
+                src={resolvedAssignee?.image || assets.profile_img_a}
                 className="size-5 rounded-full"
                 alt="avatar"
               />
-              {task.assignee?.name || 'Unassigned'}
+              {resolvedAssignee?.name ||
+                resolvedAssignee?.email ||
+                'Unassigned'}
             </div>
             <div className="flex items-center gap-2">
               <CalendarIcon className="size-4 text-gray-500 dark:text-zinc-500" />

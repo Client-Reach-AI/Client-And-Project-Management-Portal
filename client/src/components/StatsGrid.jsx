@@ -1,11 +1,10 @@
 import { FolderOpen, CheckCircle, Users, AlertTriangle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { useWorkspaceContext } from '../context/workspaceContext';
 
 export default function StatsGrid() {
-  const currentWorkspace = useSelector(
-    (state) => state?.workspace?.currentWorkspace || null
-  );
+  const { currentWorkspace } = useWorkspaceContext();
   const user = useSelector((state) => state.auth.user);
 
   const [stats, setStats] = useState({
@@ -64,7 +63,9 @@ export default function StatsGrid() {
         myTasks: currentWorkspace.projects.reduce(
           (acc, project) =>
             acc +
-            project.tasks.filter((t) => t.assignee?.id === user?.id).length,
+            project.tasks.filter(
+              (t) => t.assignee?.id === user?.id || t.assigneeId === user?.id
+            ).length,
           0
         ),
         overdueIssues: currentWorkspace.projects.reduce(
@@ -77,39 +78,37 @@ export default function StatsGrid() {
         ),
       });
     }
-  }, [currentWorkspace]);
+  }, [currentWorkspace, user]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 my-9">
-      {statCards.map(
-        ({ icon: Icon, title, value, subtitle, bgColor, textColor }, i) => (
-          <div
-            key={i}
-            className="bg-white dark:bg-zinc-950 dark:bg-linear-to-br dark:from-zinc-800/70 dark:to-zinc-900/50 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition duration-200 rounded-md"
-          >
-            <div className="p-6 py-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-1">
-                    {title}
+      {statCards.map((card, i) => (
+        <div
+          key={i}
+          className="bg-white dark:bg-zinc-950 dark:bg-linear-to-br dark:from-zinc-800/70 dark:to-zinc-900/50 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition duration-200 rounded-md"
+        >
+          <div className="p-6 py-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-1">
+                  {card.title}
+                </p>
+                <p className="text-3xl font-bold text-zinc-800 dark:text-white">
+                  {card.value}
+                </p>
+                {card.subtitle && (
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
+                    {card.subtitle}
                   </p>
-                  <p className="text-3xl font-bold text-zinc-800 dark:text-white">
-                    {value}
-                  </p>
-                  {subtitle && (
-                    <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
-                      {subtitle}
-                    </p>
-                  )}
-                </div>
-                <div className={`p-3 rounded-xl ${bgColor} bg-opacity-20`}>
-                  <Icon size={20} className={textColor} />
-                </div>
+                )}
+              </div>
+              <div className={`p-3 rounded-xl ${card.bgColor} bg-opacity-20`}>
+                <card.icon size={20} className={card.textColor} />
               </div>
             </div>
           </div>
-        )
-      )}
+        </div>
+      ))}
     </div>
   );
 }

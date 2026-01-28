@@ -6,11 +6,11 @@ import {
 } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
+import { useWorkspaceContext } from '../context/workspaceContext';
 
 function MyTasksSidebar() {
   const user = useSelector((state) => state.auth.user);
-
-  const { currentWorkspace } = useSelector((state) => state.workspace);
+  const { currentWorkspace } = useWorkspaceContext();
   const [showMyTasks, setShowMyTasks] = useState(false);
   const [myTasks, setMyTasks] = useState([]);
 
@@ -31,7 +31,10 @@ function MyTasksSidebar() {
 
   const fetchUserTasks = () => {
     const userId = user?.id || '';
-    if (!userId || !currentWorkspace?.projects) return;
+    if (!userId || !currentWorkspace?.projects) {
+      setMyTasks([]);
+      return;
+    }
     const currentWorkspaceTasks = currentWorkspace.projects.flatMap((project) =>
       project.tasks.filter(
         (task) => task?.assignee?.id === userId || task?.assigneeId === userId

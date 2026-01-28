@@ -3,15 +3,14 @@ import { UsersIcon, Search, UserPlus, Shield, Activity } from 'lucide-react';
 import InviteMemberDialog from '../components/InviteMemberDialog';
 import { useSelector } from 'react-redux';
 import { assets } from '../assets/assets';
+import { useWorkspaceContext } from '../context/workspaceContext';
 
 const Team = () => {
   const [tasks, setTasks] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [users, setUsers] = useState([]);
-  const currentWorkspace = useSelector(
-    (state) => state?.workspace?.currentWorkspace || null
-  );
+  const { currentWorkspace } = useWorkspaceContext();
   const user = useSelector((state) => state.auth.user);
   const memberRole = currentWorkspace?.members?.find(
     (m) => m.user.id === user?.id

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { XIcon } from 'lucide-react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
-import { createWorkspaceThunk } from '../features/workspaceSlice';
+import { useCreateWorkspace } from '../hooks/useMutations';
+import { useWorkspaceContext } from '../context/workspaceContext';
 
 const slugify = (value) =>
   value
@@ -13,8 +14,9 @@ const slugify = (value) =>
     .replace(/-+/g, '-');
 
 const CreateWorkspaceDialog = ({ isOpen, onClose }) => {
-  const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
+  const { setCurrentWorkspaceId } = useWorkspaceContext();
+  const { mutateAsync: createWorkspace, isPending } = useCreateWorkspace();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -37,7 +39,10 @@ const CreateWorkspaceDialog = ({ isOpen, onClose }) => {
         ownerId: user.id,
       };
 
-      await dispatch(createWorkspaceThunk(payload)).unwrap();
+      const created = await createWorkspace(payload);
+      if (created?.id) {
+        setCurrentWorkspaceId(created.id);
+      }
       toast.success('Workspace created');
       onClose();
     } catch (error) {
@@ -132,10 +137,10 @@ const CreateWorkspaceDialog = ({ isOpen, onClose }) => {
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isPending}
               className="px-5 py-2 rounded text-sm bg-linear-to-br from-blue-500 to-blue-600 text-white disabled:opacity-50 hover:opacity-90 transition"
             >
-              {isSubmitting ? 'Creating...' : 'Create Workspace'}
+              {isSubmitting || isPending ? 'Creating...' : 'Create Workspace'}
             </button>
           </div>
         </form>

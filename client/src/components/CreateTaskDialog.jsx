@@ -1,21 +1,19 @@
 import { useState } from 'react';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
-import { useDispatch, useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
-import { createTaskThunk } from '../features/workspaceSlice';
+import { useCreateTask } from '../hooks/useMutations';
+import { useWorkspaceContext } from '../context/workspaceContext';
 
 export default function CreateTaskDialog({
   showCreateTask,
   setShowCreateTask,
   projectId,
 }) {
-  const currentWorkspace = useSelector(
-    (state) => state.workspace?.currentWorkspace || null
-  );
-  const dispatch = useDispatch();
+  const { currentWorkspace } = useWorkspaceContext();
+  const { mutateAsync: createTask, isPending } = useCreateTask();
   const project = currentWorkspace?.projects.find((p) => p.id === projectId);
-  const teamMembers = project?.members || [];
+  const teamMembers = currentWorkspace?.members || project?.members || [];
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -34,21 +32,19 @@ export default function CreateTaskDialog({
 
     try {
       setIsSubmitting(true);
-      await dispatch(
-        createTaskThunk({
-          workspaceId: currentWorkspace.id,
-          projectId,
-          payload: {
-            title: formData.title,
-            description: formData.description,
-            type: formData.type,
-            status: formData.status,
-            priority: formData.priority,
-            assigneeId: formData.assigneeId || null,
-            due_date: formData.due_date || null,
-          },
-        })
-      ).unwrap();
+      await createTask({
+        workspaceId: currentWorkspace.id,
+        projectId,
+        payload: {
+          title: formData.title,
+          description: formData.description,
+          type: formData.type,
+          status: formData.status,
+          priority: formData.priority,
+          assigneeId: formData.assigneeId || null,
+          due_date: formData.due_date || null,
+        },
+      });
       toast.success('Task created');
       setShowCreateTask(false);
     } catch (error) {
@@ -139,8 +135,8 @@ export default function CreateTaskDialog({
               >
                 <option value="">Unassigned</option>
                 {teamMembers.map((member) => (
-                  <option key={member?.user.id} value={member?.user.id}>
-                    {member?.user.email}
+                  <option key={member?.user?.id} value={member?.user?.id}>
+                    {member?.user?.name || member?.user?.email}
                   </option>
                 ))}
               </select>
@@ -193,10 +189,10 @@ export default function CreateTaskDialog({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isPending}
               className="rounded px-5 py-2 text-sm bg-linear-to-br from-blue-500 to-blue-600 hover:opacity-90 text-white dark:text-zinc-200 transition"
             >
-              {isSubmitting ? 'Creating...' : 'Create Task'}
+              {isSubmitting || isPending ? 'Creating...' : 'Create Task'}
             </button>
           </div>
         </form>

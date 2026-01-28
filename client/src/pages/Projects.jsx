@@ -3,14 +3,11 @@ import { useSelector } from 'react-redux';
 import { Plus, Search, FolderOpen } from 'lucide-react';
 import ProjectCard from '../components/ProjectCard';
 import CreateProjectDialog from '../components/CreateProjectDialog';
+import { useWorkspaceContext } from '../context/workspaceContext';
 
 export default function Projects() {
-  const projects = useSelector(
-    (state) => state?.workspace?.currentWorkspace?.projects || []
-  );
-  const currentWorkspace = useSelector(
-    (state) => state?.workspace?.currentWorkspace || null
-  );
+  const { currentWorkspace } = useWorkspaceContext();
+  const projects = currentWorkspace?.projects || [];
   const user = useSelector((state) => state.auth.user);
   const isAdmin = useMemo(() => {
     const role = currentWorkspace?.members?.find(

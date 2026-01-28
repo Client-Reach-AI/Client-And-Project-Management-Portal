@@ -1,9 +1,9 @@
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
-import { useDispatch, useSelector } from 'react-redux';
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { deleteTasksThunk, updateTaskThunk } from '../features/workspaceSlice';
+import { useDeleteTasks, useUpdateTask } from '../hooks/useMutations';
+import { useWorkspaceContext } from '../context/workspaceContext';
 import {
   Bug,
   CalendarIcon,
@@ -14,6 +14,7 @@ import {
   XIcon,
   Zap,
 } from 'lucide-react';
+import { assets } from '../assets/assets';
 
 const typeIcons = {
   BUG: { icon: Bug, color: 'text-red-600 dark:text-red-400' },
@@ -42,11 +43,10 @@ const priorityTexts = {
 };
 
 const ProjectTasks = ({ tasks }) => {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const currentWorkspace = useSelector(
-    (state) => state.workspace.currentWorkspace
-  );
+  const { currentWorkspace } = useWorkspaceContext();
+  const { mutateAsync: updateTask } = useUpdateTask();
+  const { mutateAsync: deleteTasks } = useDeleteTasks();
   const [selectedTasks, setSelectedTasks] = useState([]);
 
   const [filters, setFilters] = useState({
@@ -56,11 +56,22 @@ const ProjectTasks = ({ tasks }) => {
     assignee: '',
   });
 
-  const assigneeList = useMemo(
-    () =>
-      Array.from(new Set(tasks.map((t) => t.assignee?.name).filter(Boolean))),
-    [tasks]
-  );
+  const assigneeMap = useMemo(() => {
+    const members = currentWorkspace?.members || [];
+    return Object.fromEntries(
+      members.map((member) => [member.user?.id, member.user])
+    );
+  }, [currentWorkspace]);
+
+  const assigneeList = useMemo(() => {
+    const names = tasks
+      .map((t) => {
+        const resolved = t.assignee || assigneeMap[t.assigneeId];
+        return resolved?.name || resolved?.email || null;
+      })
+      .filter(Boolean);
+    return Array.from(new Set(names));
+  }, [tasks, assigneeMap]);
 
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
@@ -69,10 +80,12 @@ const ProjectTasks = ({ tasks }) => {
         (!status || task.status === status) &&
         (!type || task.type === type) &&
         (!priority || task.priority === priority) &&
-        (!assignee || task.assignee?.name === assignee)
+        (!assignee ||
+          (task.assignee || assigneeMap[task.assigneeId])?.name === assignee ||
+          (task.assignee || assigneeMap[task.assigneeId])?.email === assignee)
       );
     });
-  }, [filters, tasks]);
+  }, [filters, tasks, assigneeMap]);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -84,13 +97,11 @@ const ProjectTasks = ({ tasks }) => {
       if (!currentWorkspace) return;
       toast.loading('Updating status...');
 
-      await dispatch(
-        updateTaskThunk({
-          workspaceId: currentWorkspace?.id,
-          taskId,
-          payload: { status: newStatus },
-        })
-      ).unwrap();
+      await updateTask({
+        workspaceId: currentWorkspace?.id,
+        taskId,
+        payload: { status: newStatus },
+      });
 
       toast.dismissAll();
       toast.success('Task status updated successfully');
@@ -110,12 +121,10 @@ const ProjectTasks = ({ tasks }) => {
 
       toast.loading('Deleting tasks...');
 
-      await dispatch(
-        deleteTasksThunk({
-          workspaceId: currentWorkspace?.id,
-          taskIds: selectedTasks,
-        })
-      ).unwrap();
+      await deleteTasks({
+        workspaceId: currentWorkspace?.id,
+        taskIds: selectedTasks,
+      });
 
       toast.dismissAll();
       toast.success('Tasks deleted successfully');
@@ -231,6 +240,8 @@ const ProjectTasks = ({ tasks }) => {
                 {filteredTasks.length > 0 ? (
                   filteredTasks.map((task) => {
                     const { icon: Icon, color } = typeIcons[task.type] || {};
+                    const resolvedAssignee =
+                      task.assignee || assigneeMap[task.assigneeId] || null;
                     const { background, prioritycolor } =
                       priorityTexts[task.priority] || {};
 
@@ -297,11 +308,15 @@ const ProjectTasks = ({ tasks }) => {
                         <td className="px-4 py-2">
                           <div className="flex items-center gap-2">
                             <img
-                              src={task.assignee?.image || ''}
+                              src={
+                                resolvedAssignee?.image || assets.profile_img_a
+                              }
                               className="size-5 rounded-full"
                               alt="avatar"
                             />
-                            {task.assignee?.name || '-'}
+                            {resolvedAssignee?.name ||
+                              resolvedAssignee?.email ||
+                              '-'}
                           </div>
                         </td>
                         <td className="px-4 py-2">
@@ -334,6 +349,8 @@ const ProjectTasks = ({ tasks }) => {
             {filteredTasks.length > 0 ? (
               filteredTasks.map((task) => {
                 const { icon: Icon, color } = typeIcons[task.type] || {};
+                const resolvedAssignee =
+                  task.assignee || assigneeMap[task.assigneeId] || null;
                 const { background, prioritycolor } =
                   priorityTexts[task.priority] || {};
 
@@ -392,13 +409,15 @@ const ProjectTasks = ({ tasks }) => {
                     </div>
                     <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
                       <img
-                        src={task.assignee?.image || ''}
+                        src={resolvedAssignee?.image || assets.profile_img_a}
                         className="size-5 rounded-full"
                         alt="avatar"
                       />
                       <div className="flex flex-col">
                         <span className="text-xs font-medium">
-                          {task.assignee?.name || 'Unassigned'}
+                          {resolvedAssignee?.name ||
+                            resolvedAssignee?.email ||
+                            'Unassigned'}
                         </span>
                         <span className="text-xs text-zinc-500 dark:text-zinc-400">
                           {task.due_date
