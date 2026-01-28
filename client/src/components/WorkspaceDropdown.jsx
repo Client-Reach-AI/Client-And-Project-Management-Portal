@@ -11,6 +11,7 @@ import CreateWorkspaceDialog from './CreateWorkspaceDialog';
 
 function WorkspaceDropdown() {
   const { workspaces } = useSelector((state) => state.workspace);
+  const user = useSelector((state) => state.auth.user);
   const currentWorkspace = useSelector(
     (state) => state.workspace?.currentWorkspace || null
   );
@@ -20,6 +21,9 @@ function WorkspaceDropdown() {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const canCreate = user?.role === 'ADMIN';
+  const canSwitch = canCreate || workspaces.length > 1;
 
   const onSelectWorkspace = (organizationId) => {
     dispatch(setCurrentWorkspace(organizationId));
@@ -42,7 +46,10 @@ function WorkspaceDropdown() {
   return (
     <div className="relative m-4" ref={dropdownRef}>
       <button
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={() => {
+          if (!canSwitch) return;
+          setIsOpen((prev) => !prev);
+        }}
         className="w-full flex items-center justify-between p-3 h-auto text-left rounded hover:bg-gray-100 dark:hover:bg-zinc-800"
       >
         <div className="flex items-center gap-3">
@@ -60,10 +67,12 @@ function WorkspaceDropdown() {
             </p>
           </div>
         </div>
-        <ChevronDown className="w-4 h-4 text-gray-500 dark:text-zinc-400 shrink-0" />
+        {canSwitch && (
+          <ChevronDown className="w-4 h-4 text-gray-500 dark:text-zinc-400 shrink-0" />
+        )}
       </button>
 
-      {isOpen && (
+      {isOpen && canSwitch && (
         <div className="absolute z-50 w-64 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded shadow-lg top-full left-0">
           <div className="p-2">
             <p className="text-xs text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-2 px-2">
@@ -103,24 +112,28 @@ function WorkspaceDropdown() {
 
           <hr className="border-gray-200 dark:border-zinc-700" />
 
-          <div
-            className="p-2 cursor-pointer rounded group hover:bg-gray-100 dark:hover:bg-zinc-800"
-            onClick={() => {
-              setIsOpen(false);
-              setIsCreateOpen(true);
-            }}
-          >
-            <p className="flex items-center text-xs gap-2 my-1 w-full text-blue-600 dark:text-blue-400 group-hover:text-blue-500 dark:group-hover:text-blue-300">
-              <Plus className="w-4 h-4" /> Create Workspace
-            </p>
-          </div>
+          {canCreate && (
+            <div
+              className="p-2 cursor-pointer rounded group hover:bg-gray-100 dark:hover:bg-zinc-800"
+              onClick={() => {
+                setIsOpen(false);
+                setIsCreateOpen(true);
+              }}
+            >
+              <p className="flex items-center text-xs gap-2 my-1 w-full text-blue-600 dark:text-blue-400 group-hover:text-blue-500 dark:group-hover:text-blue-300">
+                <Plus className="w-4 h-4" /> Create Workspace
+              </p>
+            </div>
+          )}
         </div>
       )}
 
-      <CreateWorkspaceDialog
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-      />
+      {canCreate && (
+        <CreateWorkspaceDialog
+          isOpen={isCreateOpen}
+          onClose={() => setIsCreateOpen(false)}
+        />
+      )}
     </div>
   );
 }
