@@ -298,7 +298,7 @@ const ProjectTasks = ({ tasks }) => {
                               handleStatusChange(task.id, e.target.value)
                             }
                             value={task.status}
-                            className="group-hover:ring ring-zinc-100 outline-none px-2 pr-4 py-1 rounded text-sm text-zinc-900 dark:text-zinc-200 cursor-pointer"
+                            className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 px-2 pr-6 py-1 rounded text-sm cursor-pointer"
                           >
                             <option value="TODO">To Do</option>
                             <option value="IN_PROGRESS">In Progress</option>
@@ -399,7 +399,7 @@ const ProjectTasks = ({ tasks }) => {
                           handleStatusChange(task.id, e.target.value)
                         }
                         value={task.status}
-                        className="w-full mt-1 bg-zinc-100 dark:bg-zinc-800 ring-1 ring-zinc-300 dark:ring-zinc-700 outline-none px-2 py-1 rounded text-sm text-zinc-900 dark:text-zinc-200"
+                        className="w-full mt-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 px-2 py-1 rounded text-sm"
                       >
                         <option value="TODO">To Do</option>
                         <option value="IN_PROGRESS">In Progress</option>
