@@ -6,6 +6,7 @@ import ProjectSidebar from './ProjectsSidebar';
 import WorkspaceDropdown from './WorkspaceDropdown';
 import {
   BriefcaseIcon,
+  CheckSquareIcon,
   FolderOpenIcon,
   LayoutDashboardIcon,
   SettingsIcon,
@@ -23,6 +24,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
   const menuItems = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboardIcon },
+    { name: 'My Tasks', href: '/my-tasks', icon: CheckSquareIcon },
     { name: 'Projects', href: '/projects', icon: FolderOpenIcon },
     ...(isAdmin
       ? [

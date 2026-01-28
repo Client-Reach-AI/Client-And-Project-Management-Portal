@@ -1,13 +1,17 @@
 ## Project Management Monorepo
 
-End-to-end project management platform with a Vite + React client and an Express + Drizzle backend. The system supports workspaces, projects, tasks, members, comments, and basic admin authentication.
+End-to-end project management platform with a Vite + React client and an Express + Drizzle backend. The system supports multi-workspace collaboration, client intake, project delivery workflows, and team visibility controls.
 
 ### Features
 
-- Workspaces with members and ownership
-- Project lifecycle tracking (status, priority, progress)
-- Task management with assignments, due dates, and comments
-- Analytics and calendar views
+- Multi-workspace collaboration with role-based access (Admin/Member)
+- Client management (manual profiles + client intake submissions)
+- Secure client intake links with submission tracking
+- Project creation with client tagging and intake auto-fill
+- Project delivery views: tasks, analytics, calendar, and settings
+- Task management with assignments, priorities, statuses, and comments
+- “My Tasks” Kanban board with drag-and-drop status updates
+- Workspace analytics and activity insights
 - Admin login with seeded credentials
 
 ### Tech Stack
@@ -16,6 +20,16 @@ End-to-end project management platform with a Vite + React client and an Express
 - Server: Node.js, Express
 - Database: PostgreSQL (Docker)
 - ORM: Drizzle
+
+### Projects & Pages
+
+- Dashboard: KPI summaries, activity feed, and quick actions
+- Projects: project cards with status, priority, and client info
+- Project Details: tasks, analytics, calendar, and settings
+- Clients: client profiles, intake submissions, and project creation from intake
+- My Tasks: personal Kanban board to manage assigned tasks
+- Team: workspace member list and invitations
+- Settings: workspace settings and management
 
 ### Repository Structure
 

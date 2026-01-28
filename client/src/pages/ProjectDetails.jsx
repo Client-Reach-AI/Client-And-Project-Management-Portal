@@ -33,16 +33,18 @@ export default function ProjectDetail() {
   const { data: project, isLoading } = useProject(id, {
     enabled: Boolean(id),
   });
-  const tasks = project?.tasks || [];
-  const intakePayload = project?.clientIntake?.payload || null;
-  const clientDetails = project?.client?.details || null;
-
   const isAdmin = useMemo(() => {
     const role = currentWorkspace?.members?.find(
       (m) => m.user.id === user?.id
     )?.role;
     return user?.role === 'ADMIN' || role === 'ADMIN';
   }, [currentWorkspace, user]);
+
+  const tasks = project?.tasks || [];
+  const intakePayload = project?.clientIntake?.payload || null;
+  const clientDetails = project?.client?.details || null;
+  const isTeamLead = project?.team_lead === user?.id;
+  const canViewClientDetails = isTeamLead || isAdmin;
 
   useEffect(() => {
     if (!tab) return;
@@ -108,7 +110,7 @@ export default function ProjectDetail() {
             </span>
           </div>
         </div>
-        {project.client && (
+        {project.client && canViewClientDetails && (
           <div className="flex items-center gap-3">
             <div className="text-sm text-zinc-500 dark:text-zinc-400">
               Client:{' '}
@@ -179,7 +181,7 @@ export default function ProjectDetail() {
         ))}
       </div>
 
-      {intakePayload && (
+      {intakePayload && canViewClientDetails && (
         <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
@@ -292,7 +294,7 @@ export default function ProjectDetail() {
         />
       )}
 
-      {showClientDetails && project.client && (
+      {showClientDetails && project.client && canViewClientDetails && (
         <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex justify-end">
           <div className="bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 w-full max-w-lg h-full p-6 overflow-y-auto">
             <div className="flex items-center justify-between mb-4">

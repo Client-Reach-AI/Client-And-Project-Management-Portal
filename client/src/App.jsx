@@ -11,16 +11,40 @@ import Login from './pages/Login';
 import AcceptInvite from './pages/AcceptInvite';
 import Clients from './pages/Clients';
 import ClientIntake from './pages/ClientIntake';
-import { useDispatch } from 'react-redux';
-import { useEffect } from 'react';
+import MyTasks from './pages/MyTasks';
+import { useDispatch, useSelector } from 'react-redux';
+import { useEffect, useRef } from 'react';
 import { loadAuthFromStorage } from './features/authSlice';
+import { useQueryClient } from '@tanstack/react-query';
 
 const App = () => {
   const dispatch = useDispatch();
+  const queryClient = useQueryClient();
+  const { user, token, initialized } = useSelector((state) => state.auth);
+  const prevUserId = useRef(null);
 
   useEffect(() => {
     dispatch(loadAuthFromStorage());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (!initialized) return;
+    const nextUserId = user?.id || null;
+
+    if (prevUserId.current && prevUserId.current !== nextUserId) {
+      queryClient.clear();
+    }
+
+    if (!nextUserId && !token) {
+      queryClient.clear();
+    }
+
+    if (nextUserId && token) {
+      queryClient.invalidateQueries();
+    }
+
+    prevUserId.current = nextUserId;
+  }, [initialized, user, token, queryClient]);
 
   return (
     <>
@@ -32,6 +56,7 @@ const App = () => {
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="team" element={<Team />} />
+          <Route path="my-tasks" element={<MyTasks />} />
           <Route path="clients" element={<Clients />} />
           <Route path="projects" element={<Projects />} />
           <Route path="projectsDetail" element={<ProjectDetails />} />
