@@ -1,7 +1,14 @@
 import { Router } from 'express';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { projectMembers, projects, tasks, users } from '../db/schema.js';
+import {
+  clientIntakes,
+  clients,
+  projectMembers,
+  projects,
+  tasks,
+  users,
+} from '../db/schema.js';
 import { generateId } from '../lib/ids.js';
 import { getProjectsForUser, isWorkspaceAdmin } from '../lib/permissions.js';
 
@@ -82,10 +89,32 @@ router.get('/:id', async (req, res, next) => {
       .from(projectMembers)
       .where(eq(projectMembers.projectId, project.id));
 
+    const [client] = project.clientId
+      ? await db
+          .select()
+          .from(clients)
+          .where(eq(clients.id, project.clientId))
+          .limit(1)
+      : [];
+
     const taskList = await db
       .select()
       .from(tasks)
       .where(eq(tasks.projectId, project.id));
+
+    const [latestIntake] = project.clientId
+      ? await db
+          .select()
+          .from(clientIntakes)
+          .where(
+            and(
+              eq(clientIntakes.clientId, project.clientId),
+              eq(clientIntakes.status, 'SUBMITTED')
+            )
+          )
+          .orderBy(desc(clientIntakes.submittedAt))
+          .limit(1)
+      : [];
 
     const userIds = new Set([
       ...memberList.map((m) => m.userId),
@@ -105,6 +134,8 @@ router.get('/:id', async (req, res, next) => {
 
     res.json({
       ...project,
+      client: client || null,
+      clientIntake: latestIntake || null,
       tasks: taskList.map((task) => ({
         ...task,
         assignee: task.assigneeId ? usersMap[task.assigneeId] : null,
@@ -132,6 +163,7 @@ router.post('/', async (req, res, next) => {
       end_date,
       team_lead,
       progress,
+      clientId,
     } = req.body;
 
     if (!workspaceId || !name || !priority || !status) {
@@ -145,11 +177,24 @@ router.post('/', async (req, res, next) => {
       (await isWorkspaceAdmin(req.user.id, workspaceId));
     if (!admin) return res.status(403).json({ message: 'Forbidden' });
 
+    if (clientId) {
+      const [client] = await db
+        .select()
+        .from(clients)
+        .where(eq(clients.id, clientId))
+        .limit(1);
+
+      if (!client || client.workspaceId !== workspaceId) {
+        return res.status(400).json({ message: 'Invalid clientId' });
+      }
+    }
+
     const projectId = generateId('proj');
 
     await db.insert(projects).values({
       id: projectId,
       workspaceId,
+      clientId: clientId || null,
       name,
       description: description || null,
       priority,

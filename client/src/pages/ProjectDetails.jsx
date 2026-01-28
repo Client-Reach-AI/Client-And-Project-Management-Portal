@@ -28,11 +28,14 @@ export default function ProjectDetail() {
   const user = useSelector((state) => state.auth.user);
 
   const [showCreateTask, setShowCreateTask] = useState(false);
+  const [showClientDetails, setShowClientDetails] = useState(false);
   const [activeTab, setActiveTab] = useState(tab || 'tasks');
   const { data: project, isLoading } = useProject(id, {
     enabled: Boolean(id),
   });
   const tasks = project?.tasks || [];
+  const intakePayload = project?.clientIntake?.payload || null;
+  const clientDetails = project?.client?.details || null;
 
   const isAdmin = useMemo(() => {
     const role = currentWorkspace?.members?.find(
@@ -105,6 +108,23 @@ export default function ProjectDetail() {
             </span>
           </div>
         </div>
+        {project.client && (
+          <div className="flex items-center gap-3">
+            <div className="text-sm text-zinc-500 dark:text-zinc-400">
+              Client:{' '}
+              <span className="text-zinc-900 dark:text-zinc-200">
+                {project.client.name}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowClientDetails(true)}
+              className="text-xs px-3 py-1 rounded border border-zinc-300 dark:border-zinc-700"
+            >
+              View Client Details
+            </button>
+          </div>
+        )}
         {canManageTasks && (
           <button
             onClick={() => setShowCreateTask(true)}
@@ -158,6 +178,61 @@ export default function ProjectDetail() {
           </div>
         ))}
       </div>
+
+      {intakePayload && (
+        <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="text-base font-semibold">Client Intake</h2>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Submitted{' '}
+                {project.clientIntake?.submittedAt
+                  ? new Date(
+                      project.clientIntake.submittedAt
+                    ).toLocaleDateString()
+                  : 'N/A'}
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 grid md:grid-cols-2 gap-4 text-sm text-zinc-600 dark:text-zinc-300">
+            <div className="space-y-1">
+              <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                Contact
+              </p>
+              <p>Name: {intakePayload.clientName || 'N/A'}</p>
+              <p>Company: {intakePayload.company || 'N/A'}</p>
+              <p>Email: {intakePayload.email || 'N/A'}</p>
+              <p>Phone: {intakePayload.phone || 'N/A'}</p>
+              <p>Website: {intakePayload.website || 'N/A'}</p>
+              <p>Industry: {intakePayload.industry || 'N/A'}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                Project Scope
+              </p>
+              <p>Project Name: {intakePayload.projectName || 'N/A'}</p>
+              <p>Goals: {intakePayload.goals || 'N/A'}</p>
+              <p>Audience: {intakePayload.targetAudience || 'N/A'}</p>
+              <p>Budget: {intakePayload.budget || 'N/A'}</p>
+              <p>Timeline: {intakePayload.timeline || 'N/A'}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                Brand & Competition
+              </p>
+              <p>Brand Guidelines: {intakePayload.brandGuidelines || 'N/A'}</p>
+              <p>Competitors: {intakePayload.competitors || 'N/A'}</p>
+              <p>Success Metrics: {intakePayload.successMetrics || 'N/A'}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                Notes
+              </p>
+              <p>{intakePayload.notes || 'N/A'}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div>
@@ -215,6 +290,87 @@ export default function ProjectDetail() {
           setShowCreateTask={setShowCreateTask}
           projectId={id}
         />
+      )}
+
+      {showClientDetails && project.client && (
+        <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex justify-end">
+          <div className="bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 w-full max-w-lg h-full p-6 overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
+                  Client Details
+                </h3>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {project.client.name}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowClientDetails(false)}
+                className="text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4 text-sm text-zinc-600 dark:text-zinc-300">
+              <div>
+                <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                  Contact
+                </p>
+                <p>Name: {project.client.name || 'N/A'}</p>
+                <p>Company: {project.client.company || 'N/A'}</p>
+                <p>Email: {project.client.email || 'N/A'}</p>
+                <p>Phone: {project.client.phone || 'N/A'}</p>
+                <p>Website: {project.client.website || 'N/A'}</p>
+                <p>Industry: {project.client.industry || 'N/A'}</p>
+              </div>
+
+              {clientDetails && (
+                <div>
+                  <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                    Team Notes
+                  </p>
+                  <p>Primary Contact: {clientDetails.contactName || 'N/A'}</p>
+                  <p>Address: {clientDetails.address || 'N/A'}</p>
+                  <p>Goals: {clientDetails.goals || 'N/A'}</p>
+                  <p>Budget: {clientDetails.budget || 'N/A'}</p>
+                  <p>Timeline: {clientDetails.timeline || 'N/A'}</p>
+                  <p>Audience: {clientDetails.targetAudience || 'N/A'}</p>
+                  <p>
+                    Brand Guidelines: {clientDetails.brandGuidelines || 'N/A'}
+                  </p>
+                  <p>Competitors: {clientDetails.competitors || 'N/A'}</p>
+                  <p>
+                    Success Metrics: {clientDetails.successMetrics || 'N/A'}
+                  </p>
+                  <p>Notes: {clientDetails.notes || 'N/A'}</p>
+                </div>
+              )}
+
+              {intakePayload && (
+                <div>
+                  <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                    Client Submission
+                  </p>
+                  <p>Project Name: {intakePayload.projectName || 'N/A'}</p>
+                  <p>Goals: {intakePayload.goals || 'N/A'}</p>
+                  <p>Audience: {intakePayload.targetAudience || 'N/A'}</p>
+                  <p>Budget: {intakePayload.budget || 'N/A'}</p>
+                  <p>Timeline: {intakePayload.timeline || 'N/A'}</p>
+                  <p>
+                    Brand Guidelines: {intakePayload.brandGuidelines || 'N/A'}
+                  </p>
+                  <p>Competitors: {intakePayload.competitors || 'N/A'}</p>
+                  <p>
+                    Success Metrics: {intakePayload.successMetrics || 'N/A'}
+                  </p>
+                  <p>Notes: {intakePayload.notes || 'N/A'}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
