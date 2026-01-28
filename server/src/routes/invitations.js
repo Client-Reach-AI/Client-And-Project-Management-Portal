@@ -110,22 +110,45 @@ router.post('/', requireAuth, async (req, res, next) => {
 
     console.log('Invite Link:', inviteLink);
 
-    await resend.emails.send({
-      from: process.env.RESEND_FROM || 'onboarding@resend.dev',
-      to: [email],
-      subject: 'You have been invited to a workspace',
-      html: `
-        <p>You have been invited to join a workspace.</p>
-        <p><a href="${inviteLink}">Accept invitation</a></p>
-        <p>If the link does not work, copy and paste this URL:</p>
-        <p>${inviteLink}</p>
-      `,
-    });
+    let emailSent = false;
+    let emailError = null;
 
-    const payload = { message: 'Invitation sent' };
+    if (!process.env.RESEND_API_KEY) {
+      emailError = 'RESEND_API_KEY is not configured';
+    } else {
+      try {
+        await resend.emails.send({
+          from: process.env.RESEND_FROM || 'onboarding@resend.dev',
+          to: [email],
+          subject: 'You have been invited to a workspace',
+          html: `
+            <p>You have been invited to join a workspace.</p>
+            <p><a href="${inviteLink}">Accept invitation</a></p>
+            <p>If the link does not work, copy and paste this URL:</p>
+            <p>${inviteLink}</p>
+          `,
+        });
+        emailSent = true;
+      } catch (err) {
+        emailError = err?.message || 'Failed to send invite email';
+        console.error('Invite email error:', err);
+      }
+    }
+
+    const payload = {
+      message: emailSent
+        ? 'Invitation sent'
+        : 'Invitation created (email not sent)',
+    };
+
+    if (emailError) {
+      payload.emailError = emailError;
+    }
+
     if (process.env.NODE_ENV !== 'production') {
       payload.inviteLink = inviteLink;
     }
+
     res.status(201).json(payload);
   } catch (error) {
     next(error);
