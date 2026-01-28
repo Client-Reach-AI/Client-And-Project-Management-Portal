@@ -104,3 +104,9 @@ export const acceptInvitation = async (payload) =>
     method: 'POST',
     body: JSON.stringify(payload),
   });
+
+export const declineInvitation = async (payload) =>
+  apiFetch('/api/invitations/decline', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });

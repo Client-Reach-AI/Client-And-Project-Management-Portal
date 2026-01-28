@@ -11,6 +11,7 @@ import {
   sendInvitation,
   fetchUserByEmail,
   login,
+  declineInvitation,
   updateProject,
   updateTask,
   updateUser,
@@ -206,6 +207,11 @@ export const useAcceptInvitation = () => {
     },
   });
 };
+
+export const useDeclineInvitation = () =>
+  useMutation({
+    mutationFn: declineInvitation,
+  });
 
 export const useLogin = () =>
   useMutation({
