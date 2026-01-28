@@ -22,6 +22,13 @@
       "when": 1769522236984,
       "tag": "0002_remarkable_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1769621982187,
+      "tag": "0003_free_red_ghost",
+      "breakpoints": true
     }
   ]
 }

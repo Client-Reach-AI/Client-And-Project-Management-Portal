@@ -90,6 +90,41 @@ export const addProjectMember = async (projectId, payload) =>
     body: JSON.stringify(payload),
   });
 
+export const fetchClients = async (workspaceId) =>
+  apiFetch(`/api/clients?workspaceId=${encodeURIComponent(workspaceId)}`);
+
+export const createClient = async (payload) =>
+  apiFetch('/api/clients', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
+export const updateClient = async (id, payload) =>
+  apiFetch(`/api/clients/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+
+export const fetchClientIntakes = async (workspaceId) =>
+  apiFetch(
+    `/api/client-intakes?workspaceId=${encodeURIComponent(workspaceId)}`
+  );
+
+export const createClientIntake = async (payload) =>
+  apiFetch('/api/client-intakes', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
+export const lookupClientIntake = async (token) =>
+  apiFetch(`/api/client-intakes/lookup?token=${encodeURIComponent(token)}`);
+
+export const submitClientIntake = async (payload) =>
+  apiFetch('/api/client-intakes/submit', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
 export const sendInvitation = async (payload) =>
   apiFetch('/api/invitations', {
     method: 'POST',

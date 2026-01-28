@@ -51,11 +51,49 @@ export const workspaceMembers = pgTable('workspace_members', {
     .notNull(),
 });
 
+export const clients = pgTable('clients', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id')
+    .notNull()
+    .references(() => workspaces.id),
+  name: text('name').notNull(),
+  company: text('company'),
+  email: text('email'),
+  phone: text('phone'),
+  website: text('website'),
+  industry: text('industry'),
+  status: text('status').default('ACTIVE').notNull(),
+  details: jsonb('details').default({}),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const clientIntakes = pgTable('client_intakes', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id')
+    .notNull()
+    .references(() => workspaces.id),
+  clientId: text('client_id').references(() => clients.id),
+  token: text('token').notNull(),
+  status: text('status').default('OPEN').notNull(),
+  payload: jsonb('payload').default({}),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  submittedAt: timestamp('submitted_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
 export const projects = pgTable('projects', {
   id: text('id').primaryKey(),
   workspaceId: text('workspace_id')
     .notNull()
     .references(() => workspaces.id),
+  clientId: text('client_id').references(() => clients.id),
   name: text('name').notNull(),
   description: text('description'),
   priority: text('priority').notNull(),

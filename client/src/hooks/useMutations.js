@@ -12,12 +12,22 @@ import {
   fetchUserByEmail,
   login,
   declineInvitation,
+  createClient,
+  updateClient,
+  createClientIntake,
+  submitClientIntake,
   updateProject,
   updateTask,
   updateUser,
   updateWorkspace,
 } from '../api';
-import { projectKeys, taskKeys, workspaceKeys } from './queryKeys';
+import {
+  clientKeys,
+  intakeKeys,
+  projectKeys,
+  taskKeys,
+  workspaceKeys,
+} from './queryKeys';
 
 export const useCreateWorkspace = () => {
   const queryClient = useQueryClient();
@@ -264,3 +274,56 @@ export const useUpdateUser = () => {
     },
   });
 };
+
+export const useCreateClient = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createClient,
+    onSuccess: (created) => {
+      if (created?.workspaceId) {
+        queryClient.invalidateQueries({
+          queryKey: clientKeys.list(created.workspaceId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: workspaceKeys.detail(created.workspaceId),
+        });
+      }
+    },
+  });
+};
+
+export const useUpdateClient = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ clientId, payload }) => updateClient(clientId, payload),
+    onSuccess: (updated) => {
+      if (updated?.workspaceId) {
+        queryClient.invalidateQueries({
+          queryKey: clientKeys.list(updated.workspaceId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: workspaceKeys.detail(updated.workspaceId),
+        });
+      }
+    },
+  });
+};
+
+export const useCreateClientIntake = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createClientIntake,
+    onSuccess: (_, variables) => {
+      if (variables?.workspaceId) {
+        queryClient.invalidateQueries({
+          queryKey: intakeKeys.list(variables.workspaceId),
+        });
+      }
+    },
+  });
+};
+
+export const useSubmitClientIntake = () =>
+  useMutation({
+    mutationFn: submitClientIntake,
+  });

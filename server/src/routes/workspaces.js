@@ -8,6 +8,7 @@ import {
   projects,
   projectMembers,
   tasks,
+  clients,
 } from '../db/schema.js';
 import { generateId } from '../lib/ids.js';
 import { getProjectsForUser, isWorkspaceAdmin } from '../lib/permissions.js';
@@ -38,6 +39,11 @@ const buildWorkspacePayload = async (workspaceId, user) => {
     .select()
     .from(projects)
     .where(eq(projects.workspaceId, workspaceId));
+
+  const clientList = await db
+    .select()
+    .from(clients)
+    .where(eq(clients.workspaceId, workspaceId));
 
   if (user?.role !== 'ADMIN') {
     const admin = await isWorkspaceAdmin(user.id, workspaceId);
@@ -78,6 +84,10 @@ const buildWorkspacePayload = async (workspaceId, user) => {
     userList.map((u) => [u.id, stripSensitive(u)])
   );
 
+  const clientsMap = Object.fromEntries(
+    clientList.map((client) => [client.id, client])
+  );
+
   const projectsWithDetails = projectList.map((project) => {
     const projectTasks = taskList
       .filter((task) => task.projectId === project.id)
@@ -96,6 +106,7 @@ const buildWorkspacePayload = async (workspaceId, user) => {
 
     return {
       ...project,
+      client: project.clientId ? clientsMap[project.clientId] || null : null,
       tasks: projectTasks,
       members: projectMemberDetails,
     };
@@ -111,6 +122,7 @@ const buildWorkspacePayload = async (workspaceId, user) => {
     owner: usersMap[workspace.ownerId] || null,
     members: memberDetails,
     projects: projectsWithDetails,
+    clients: clientList,
   };
 };
 

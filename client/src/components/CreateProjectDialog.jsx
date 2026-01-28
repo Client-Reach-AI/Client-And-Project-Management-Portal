@@ -1,12 +1,20 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { XIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCreateProject } from '../hooks/useMutations';
+import { useClients } from '../hooks/useQueries';
 import { useWorkspaceContext } from '../context/workspaceContext';
 
-const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
+const CreateProjectDialog = ({
+  isDialogOpen,
+  setIsDialogOpen,
+  initialData,
+}) => {
   const { currentWorkspace } = useWorkspaceContext();
   const { mutateAsync: createProject, isPending } = useCreateProject();
+  const { data: clients = [], refetch: refetchClients } = useClients(
+    currentWorkspace?.id
+  );
 
   const [formData, setFormData] = useState({
     name: '',
@@ -18,9 +26,47 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
     team_members: [],
     team_lead: '',
     progress: 0,
+    clientId: '',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!initialData) return;
+    setFormData((prev) => ({
+      ...prev,
+      ...initialData,
+      clientId: initialData?.clientId || prev.clientId || '',
+    }));
+  }, [initialData]);
+
+  useEffect(() => {
+    if (isDialogOpen) {
+      refetchClients();
+    }
+  }, [isDialogOpen, refetchClients]);
+
+  const clientOptions = (() => {
+    const workspaceClients = currentWorkspace?.clients || [];
+    const combined = [...workspaceClients, ...clients];
+    const map = new Map();
+    combined.forEach((client) => {
+      if (!client?.id) return;
+      if (!map.has(client.id)) {
+        map.set(client.id, client);
+      }
+    });
+    const list = Array.from(map.values());
+
+    if (initialData?.clientId && !map.has(initialData.clientId)) {
+      list.unshift({
+        id: initialData.clientId,
+        name: initialData.clientName || 'Selected client',
+      });
+    }
+
+    return list;
+  })();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,6 +79,7 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
         workspaceId: currentWorkspace.id,
         payload: {
           workspaceId: currentWorkspace.id,
+          clientId: formData.clientId || null,
           name: formData.name,
           description: formData.description,
           status: formData.status,
@@ -110,6 +157,25 @@ const CreateProjectDialog = ({ isDialogOpen, setIsDialogOpen }) => {
               placeholder="Describe your project"
               className="w-full px-3 py-2 rounded dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 mt-1 text-zinc-900 dark:text-zinc-200 text-sm h-20"
             />
+          </div>
+
+          {/* Client */}
+          <div>
+            <label className="block text-sm mb-1">Client</label>
+            <select
+              value={formData.clientId}
+              onChange={(e) =>
+                setFormData({ ...formData, clientId: e.target.value })
+              }
+              className="w-full px-3 py-2 rounded dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 mt-1 text-zinc-900 dark:text-zinc-200 text-sm"
+            >
+              <option value="">No client</option>
+              {clientOptions.map((client) => (
+                <option key={client.id} value={client.id}>
+                  {client.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Status & Priority */}

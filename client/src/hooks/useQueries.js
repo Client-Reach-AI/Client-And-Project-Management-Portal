@@ -6,8 +6,17 @@ import {
   fetchWorkspaceById,
   fetchWorkspaces,
   lookupInvitation,
+  fetchClients,
+  fetchClientIntakes,
+  lookupClientIntake,
 } from '../api';
-import { projectKeys, taskKeys, workspaceKeys } from './queryKeys';
+import {
+  clientKeys,
+  intakeKeys,
+  projectKeys,
+  taskKeys,
+  workspaceKeys,
+} from './queryKeys';
 
 export const useWorkspaces = (options = {}) =>
   useQuery({
@@ -54,6 +63,30 @@ export const useInvitationLookup = (token, options = {}) =>
   useQuery({
     queryKey: ['invitation', token],
     queryFn: () => lookupInvitation(token),
+    enabled: Boolean(token),
+    ...options,
+  });
+
+export const useClients = (workspaceId, options = {}) =>
+  useQuery({
+    queryKey: clientKeys.list(workspaceId),
+    queryFn: () => fetchClients(workspaceId),
+    enabled: Boolean(workspaceId),
+    ...options,
+  });
+
+export const useClientIntakes = (workspaceId, options = {}) =>
+  useQuery({
+    queryKey: intakeKeys.list(workspaceId),
+    queryFn: () => fetchClientIntakes(workspaceId),
+    enabled: Boolean(workspaceId),
+    ...options,
+  });
+
+export const useClientIntakeLookup = (token, options = {}) =>
+  useQuery({
+    queryKey: intakeKeys.lookup(token),
+    queryFn: () => lookupClientIntake(token),
     enabled: Boolean(token),
     ...options,
   });
