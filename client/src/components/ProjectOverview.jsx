@@ -34,7 +34,7 @@ const ProjectOverview = () => {
   return (
     currentWorkspace && (
       <div className="bg-white dark:bg-zinc-950 dark:bg-linear-to-br dark:from-zinc-800/70 dark:to-zinc-900/50 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-200 rounded-lg overflow-hidden">
-        <div className="border-b border-zinc-200 dark:border-zinc-800 p-4 flex items-center justify-between">
+        <div className="border-b border-zinc-200 dark:border-zinc-800 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <h2 className="text-md text-zinc-800 dark:text-zinc-300">
             Project Overview
           </h2>
@@ -74,8 +74,8 @@ const ProjectOverview = () => {
                   to={`/projectsDetail?id=${project.id}&tab=tasks`}
                   className="block p-6 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors"
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-3">
+                    <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-zinc-800 dark:text-zinc-300 mb-1">
                         {project.name}
                       </h3>
@@ -83,7 +83,7 @@ const ProjectOverview = () => {
                         {project.description || 'No description'}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 ml-4">
+                    <div className="flex items-center gap-2 sm:ml-4 flex-wrap">
                       <span
                         className={`text-xs px-2 py-1 rounded ${statusColors[project.status]}`}
                       >

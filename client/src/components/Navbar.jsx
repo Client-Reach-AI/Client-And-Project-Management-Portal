@@ -24,7 +24,7 @@ const Navbar = ({ setIsSidebarOpen }) => {
           </button>
 
           {/* Search Input */}
-          <div className="relative flex-1 max-w-sm">
+          <div className="relative flex-1 max-w-sm hidden md:block">
             <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-400 size-3.5" />
             <input
               type="text"

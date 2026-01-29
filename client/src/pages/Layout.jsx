@@ -38,17 +38,17 @@ const Layout = () => {
     );
 
   return (
-    <div className="flex bg-white dark:bg-zinc-950 text-gray-900 dark:text-slate-100">
+    <div className="flex min-h-screen w-full overflow-x-hidden bg-white dark:bg-zinc-950 text-gray-900 dark:text-slate-100">
       <Sidebar
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
       />
-      <div className="flex-1 flex flex-col h-screen">
+      <div className="flex-1 flex flex-col min-h-screen overflow-x-hidden">
         <Navbar
           isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={setIsSidebarOpen}
         />
-        <div className="flex-1 h-full p-6 xl:p-10 xl:px-16 overflow-y-scroll">
+        <div className="flex-1 h-full p-6 xl:p-10 xl:px-16 overflow-y-auto overflow-x-hidden">
           <Outlet />
         </div>
       </div>

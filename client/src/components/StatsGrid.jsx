@@ -81,7 +81,7 @@ export default function StatsGrid() {
   }, [currentWorkspace, user]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 my-9">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 my-6 sm:my-9">
       {statCards.map((card, i) => (
         <div
           key={i}
@@ -97,7 +97,7 @@ export default function StatsGrid() {
                   {card.value}
                 </p>
                 {card.subtitle && (
-                  <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1 truncate">
                     {card.subtitle}
                   </p>
                 )}
