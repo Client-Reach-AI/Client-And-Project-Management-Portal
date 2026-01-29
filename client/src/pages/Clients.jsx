@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
-import { Filter, Link as LinkIcon, Plus, Search, X } from 'lucide-react';
+import { Filter, Link as LinkIcon, Plus, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useSelector } from 'react-redux';
 import { useWorkspaceContext } from '../context/workspaceContext';
 import { useClientIntakes, useClients } from '../hooks/useQueries';
 import { useCreateClient, useCreateClientIntake } from '../hooks/useMutations';
 import CreateProjectDialog from '../components/CreateProjectDialog';
+import SearchPopover from '../components/SearchPopover';
 
 const initialClientForm = {
   name: '',
@@ -498,15 +499,11 @@ const Clients = () => {
       )}
 
       <div className="flex flex-col lg:flex-row gap-3 lg:items-center">
-        <div className="relative w-full lg:max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-zinc-400" />
-          <input
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search clients"
-            className="w-full pl-9 pr-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 text-sm"
-          />
-        </div>
+        <SearchPopover
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search clients"
+        />
         <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full">
           <div className="flex items-center gap-2 px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 text-sm w-full sm:w-auto">
             <Filter className="size-4 text-zinc-500" />
