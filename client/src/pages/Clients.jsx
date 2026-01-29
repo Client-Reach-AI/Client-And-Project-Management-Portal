@@ -507,25 +507,25 @@ const Clients = () => {
             className="w-full pl-9 pr-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 text-sm"
           />
         </div>
-        <div className="flex flex-wrap gap-2">
-          <div className="flex items-center gap-2 px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 text-sm">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full">
+          <div className="flex items-center gap-2 px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 text-sm w-full sm:w-auto">
             <Filter className="size-4 text-zinc-500" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-transparent outline-none"
+              className="bg-transparent outline-none w-full sm:w-auto"
             >
               <option value="ALL">All Status</option>
               <option value="ACTIVE">Active</option>
               <option value="INACTIVE">Inactive</option>
             </select>
           </div>
-          <div className="flex items-center gap-2 px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 text-sm">
+          <div className="flex items-center gap-2 px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 text-sm w-full sm:w-auto">
             <span className="text-zinc-500">Sort</span>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="bg-transparent outline-none"
+              className="bg-transparent outline-none w-full sm:w-auto"
             >
               <option value="name-asc">Name (A-Z)</option>
               <option value="name-desc">Name (Z-A)</option>
@@ -537,7 +537,7 @@ const Clients = () => {
             <button
               type="button"
               onClick={clearFilters}
-              className="flex items-center gap-1 px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 text-sm"
+              className="flex items-center justify-center gap-1 px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 text-sm w-full sm:w-auto"
             >
               <X className="size-3" /> Clear
             </button>
