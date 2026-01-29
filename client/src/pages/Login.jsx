@@ -11,8 +11,8 @@ const Login = () => {
   const { user } = useSelector((state) => state.auth);
   const { mutateAsync: login, isPending } = useLogin();
   const [formData, setFormData] = useState({
-    email: 'admin@admin.com',
-    password: 'Password123',
+    email: '',
+    password: '',
   });
 
   const handleSubmit = async (e) => {
