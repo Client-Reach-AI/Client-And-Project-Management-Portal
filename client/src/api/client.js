@@ -1,8 +1,12 @@
 const getAuthToken = () => localStorage.getItem('authToken');
-const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+const runtimeEnv = typeof window !== 'undefined' ? window.__ENV__ || {} : {};
+const API_BASE_URL = (
+  import.meta.env.VITE_API_URL ||
+  runtimeEnv.VITE_API_URL ||
+  ''
+).replace(/\/$/, '');
 
 export const apiFetch = async (path, options = {}) => {
-  console.log(API_BASE_URL);
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {}),
