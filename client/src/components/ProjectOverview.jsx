@@ -98,7 +98,7 @@ const ProjectOverview = () => {
                   </div>
 
                   <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-500 mb-3">
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                       {project.members?.length > 0 && (
                         <div className="flex items-center gap-1">
                           <UsersIcon className="w-3 h-3" />

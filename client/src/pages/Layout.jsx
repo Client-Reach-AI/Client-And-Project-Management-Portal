@@ -38,12 +38,12 @@ const Layout = () => {
     );
 
   return (
-    <div className="flex min-h-screen w-full overflow-x-hidden bg-white dark:bg-zinc-950 text-gray-900 dark:text-slate-100">
+    <div className="relative flex h-screen w-full overflow-hidden bg-white dark:bg-zinc-950 text-gray-900 dark:text-slate-100">
       <Sidebar
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
       />
-      <div className="flex-1 flex flex-col min-h-screen overflow-x-hidden">
+      <div className="flex-1 flex flex-col h-full overflow-hidden sm:pl-[17rem]">
         <Navbar
           isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={setIsSidebarOpen}

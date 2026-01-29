@@ -81,7 +81,7 @@ const RecentActivity = () => {
                       <TypeIcon className={`w-4 h-4 ${iconColor}`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-2">
+                      <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
                         <h4 className="text-zinc-800 dark:text-zinc-200 truncate">
                           {task.title}
                         </h4>
@@ -91,7 +91,7 @@ const RecentActivity = () => {
                           {task.status.replace('_', ' ')}
                         </span>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400">
                         <span className="capitalize">
                           {task.type.toLowerCase()}
                         </span>
