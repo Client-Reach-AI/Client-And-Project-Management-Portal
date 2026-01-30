@@ -39,7 +39,6 @@ const TaskDetails = () => {
       await addComment({
         taskId,
         payload: {
-          userId: user?.id,
           content: newComment,
         },
       });

@@ -290,11 +290,9 @@ router.post('/:id/comments', async (req, res, next) => {
       }
     }
 
-    const { userId, content } = req.body;
-    if (!userId || !content) {
-      return res
-        .status(400)
-        .json({ message: 'userId and content are required' });
+    const { content } = req.body;
+    if (!content) {
+      return res.status(400).json({ message: 'content is required' });
     }
 
     const commentId = generateId('cmt');
@@ -302,7 +300,7 @@ router.post('/:id/comments', async (req, res, next) => {
     await db.insert(comments).values({
       id: commentId,
       taskId: req.params.id,
-      userId,
+      userId: req.user.id,
       content,
     });
 
@@ -314,7 +312,7 @@ router.post('/:id/comments', async (req, res, next) => {
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
+      .where(eq(users.id, req.user.id))
       .limit(1);
 
     res.status(201).json({
