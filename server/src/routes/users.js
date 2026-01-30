@@ -16,6 +16,9 @@ router.get('/', async (req, res, next) => {
   try {
     const { email } = req.query;
     if (email) {
+      if (req.user.role !== 'ADMIN') {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
       const [user] = await db
         .select()
         .from(users)
@@ -24,6 +27,9 @@ router.get('/', async (req, res, next) => {
       return res.json(stripSensitive(user || null));
     }
 
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
     const list = await db.select().from(users);
     res.json(list.map(stripSensitive));
   } catch (error) {
@@ -33,6 +39,9 @@ router.get('/', async (req, res, next) => {
 
 router.get('/:id', async (req, res, next) => {
   try {
+    if (req.user.id !== req.params.id && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
     const [user] = await db
       .select()
       .from(users)
@@ -49,6 +58,9 @@ router.get('/:id', async (req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
     const { name, email, image, role } = req.body;
     if (!name || !email) {
       return res.status(400).json({ message: 'name and email are required' });

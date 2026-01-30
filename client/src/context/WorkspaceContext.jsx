@@ -16,6 +16,7 @@ export const WorkspaceProvider = ({ children }) => {
     isFetching: workspacesFetching,
   } = useWorkspaces({
     enabled: Boolean(user),
+    retry: false,
   });
 
   useEffect(() => {
@@ -28,10 +29,13 @@ export const WorkspaceProvider = ({ children }) => {
     data: currentWorkspace,
     isLoading: workspaceLoading,
     isError: workspaceError,
+    error: workspaceErrorDetails,
   } = useWorkspace(currentWorkspaceId, {
-    enabled: Boolean(currentWorkspaceId && user),
+    enabled: Boolean(currentWorkspaceId && user && workspaces.length),
     refetchOnWindowFocus: true,
-    refetchInterval: 10000,
+    refetchInterval: (query) =>
+      query.state.status === 'error' ? false : 10000,
+    retry: false,
   });
 
   useEffect(() => {
@@ -49,7 +53,7 @@ export const WorkspaceProvider = ({ children }) => {
       return;
     }
 
-    if (workspacesFetching || !workspaceError) return;
+    if (workspacesFetching) return;
     const nextId = workspaces[0]?.id || null;
     if (nextId) {
       setCurrentWorkspaceId(nextId);
@@ -63,6 +67,8 @@ export const WorkspaceProvider = ({ children }) => {
       currentWorkspaceId,
       setCurrentWorkspaceId,
       loading: workspacesLoading || workspaceLoading,
+      error: workspaceErrorDetails || null,
+      hasError: Boolean(workspaceError),
       searchQuery,
       setSearchQuery,
     }),
@@ -72,6 +78,8 @@ export const WorkspaceProvider = ({ children }) => {
       currentWorkspaceId,
       workspacesLoading,
       workspaceLoading,
+      workspaceErrorDetails,
+      workspaceError,
       searchQuery,
     ]
   );

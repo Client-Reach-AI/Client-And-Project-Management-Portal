@@ -18,8 +18,8 @@ function WorkspaceDropdown() {
   const memberRole = currentWorkspace?.members?.find(
     (member) => member.user.id === user?.id
   )?.role;
-  const canCreate = user?.role === 'ADMIN' || memberRole === 'ADMIN';
-  const canSwitch = canCreate || workspaces.length > 1;
+  const canCreate = user?.role === 'ADMIN';
+  const canSwitch = workspaces.length > 1;
 
   const onSelectWorkspace = (organizationId) => {
     setCurrentWorkspaceId(organizationId);

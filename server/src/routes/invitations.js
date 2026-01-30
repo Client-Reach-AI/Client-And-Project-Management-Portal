@@ -80,16 +80,28 @@ router.post('/', requireAuth, async (req, res, next) => {
         .json({ message: 'email, role, and workspaceId are required' });
     }
 
-    if (role === 'MEMBER' && !projectId) {
+    const normalizedRole = role?.toUpperCase();
+    if (!['GLOBAL_ADMIN', 'ADMIN', 'MEMBER'].includes(normalizedRole)) {
+      return res.status(400).json({ message: 'Invalid role' });
+    }
+
+    if (normalizedRole === 'MEMBER' && !projectId) {
       return res
         .status(400)
         .json({ message: 'projectId is required for member invites' });
     }
 
-    const isAdmin =
-      req.user.role === 'ADMIN' ||
-      (await isWorkspaceAdmin(req.user.id, workspaceId));
+    const isGlobalAdmin = req.user.role === 'ADMIN';
+    const isWorkspaceAdminRole = await isWorkspaceAdmin(
+      req.user.id,
+      workspaceId
+    );
+    const isAdmin = isGlobalAdmin || isWorkspaceAdminRole;
     if (!isAdmin) return res.status(403).json({ message: 'Forbidden' });
+
+    if (normalizedRole === 'GLOBAL_ADMIN' && !isGlobalAdmin) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
 
     const token = crypto.randomBytes(24).toString('hex');
     const inviteId = generateId('invite');
@@ -99,9 +111,9 @@ router.post('/', requireAuth, async (req, res, next) => {
       id: inviteId,
       email: email.toLowerCase(),
       token,
-      role,
+      role: normalizedRole,
       workspaceId,
-      projectId: projectId || null,
+      projectId: normalizedRole === 'MEMBER' ? projectId : null,
       invitedBy: req.user.id,
       expiresAt,
     });
@@ -184,13 +196,15 @@ router.post('/accept', async (req, res, next) => {
       .limit(1);
 
     let userId = existingUser?.id;
+    const isGlobalAdminInvite = invite.role === 'GLOBAL_ADMIN';
+    const workspaceRole = invite.role === 'MEMBER' ? 'MEMBER' : 'ADMIN';
 
     if (!existingUser) {
       if (!password) {
         return res.status(400).json({ message: 'password is required' });
       }
       const passwordHash = await bcrypt.hash(password, 10);
-      const finalRole = invite.role === 'ADMIN' ? 'ADMIN' : 'USER';
+      const finalRole = isGlobalAdminInvite ? 'ADMIN' : 'USER';
       userId = generateId('user');
       await db.insert(users).values({
         id: userId,
@@ -199,6 +213,11 @@ router.post('/accept', async (req, res, next) => {
         password_hash: passwordHash,
         role: finalRole,
       });
+    } else if (isGlobalAdminInvite && existingUser.role !== 'ADMIN') {
+      await db
+        .update(users)
+        .set({ role: 'ADMIN', updatedAt: new Date() })
+        .where(eq(users.id, existingUser.id));
     } else if (!existingUser.password_hash && password) {
       const passwordHash = await bcrypt.hash(password, 10);
       await db
@@ -232,13 +251,13 @@ router.post('/accept', async (req, res, next) => {
         id: memberId,
         workspaceId: invite.workspaceId,
         userId,
-        role: invite.role,
+        role: workspaceRole,
         message: '',
       });
-    } else if (existingMembership.role !== invite.role) {
+    } else if (existingMembership.role !== workspaceRole) {
       await db
         .update(workspaceMembers)
-        .set({ role: invite.role })
+        .set({ role: workspaceRole })
         .where(eq(workspaceMembers.id, existingMembership.id));
     }
 
@@ -273,7 +292,11 @@ router.post('/accept', async (req, res, next) => {
     const safeUser = stripSensitive(user);
 
     if (existingUser?.id) {
-      return res.json({ existingUser: true, user: safeUser });
+      return res.json({
+        existingUser: true,
+        user: safeUser,
+        workspaceId: invite.workspaceId,
+      });
     }
 
     const jwt = (await import('jsonwebtoken')).default;
@@ -283,7 +306,11 @@ router.post('/accept', async (req, res, next) => {
       { expiresIn: '7d' }
     );
 
-    return res.json({ token: tokenValue, user: safeUser });
+    return res.json({
+      token: tokenValue,
+      user: safeUser,
+      workspaceId: invite.workspaceId,
+    });
   } catch (error) {
     next(error);
   }

@@ -43,6 +43,12 @@ const AcceptInvite = () => {
 
       const result = await acceptInvite(payload);
 
+      const targetWorkspaceId =
+        result?.workspaceId || invite?.workspaceId || null;
+      if (targetWorkspaceId) {
+        localStorage.setItem('currentWorkspaceId', targetWorkspaceId);
+      }
+
       if (result?.existingUser) {
         toast.success('Invitation accepted. Please sign in.');
         navigate('/login');

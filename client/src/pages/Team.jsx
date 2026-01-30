@@ -187,15 +187,27 @@ const Team = () => {
                         {user.user.email}
                       </td>
                       <td className="px-6 py-2.5 whitespace-nowrap">
-                        <span
-                          className={`px-2 py-1 text-xs rounded-md ${
-                            user.role === 'ADMIN'
+                        {(() => {
+                          const isGlobalAdmin = user.user?.role === 'ADMIN';
+                          const roleLabel = isGlobalAdmin
+                            ? 'Global Admin'
+                            : user.role === 'ADMIN'
+                              ? 'Workspace Admin'
+                              : 'Team Member';
+                          const roleClass = isGlobalAdmin
+                            ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300'
+                            : user.role === 'ADMIN'
                               ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-500 dark:text-purple-400'
-                              : 'bg-gray-200 dark:bg-zinc-700 text-gray-700 dark:text-zinc-300'
-                          }`}
-                        >
-                          {user.role || 'User'}
-                        </span>
+                              : 'bg-gray-200 dark:bg-zinc-700 text-gray-700 dark:text-zinc-300';
+
+                          return (
+                            <span
+                              className={`px-2 py-1 text-xs rounded-md ${roleClass}`}
+                            >
+                              {roleLabel}
+                            </span>
+                          );
+                        })()}
                       </td>
                     </tr>
                   ))}
@@ -227,15 +239,27 @@ const Team = () => {
                     </div>
                   </div>
                   <div>
-                    <span
-                      className={`px-2 py-1 text-xs rounded-md ${
-                        user.role === 'ADMIN'
+                    {(() => {
+                      const isGlobalAdmin = user.user?.role === 'ADMIN';
+                      const roleLabel = isGlobalAdmin
+                        ? 'Global Admin'
+                        : user.role === 'ADMIN'
+                          ? 'Workspace Admin'
+                          : 'Team Member';
+                      const roleClass = isGlobalAdmin
+                        ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300'
+                        : user.role === 'ADMIN'
                           ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-500 dark:text-purple-400'
-                          : 'bg-gray-200 dark:bg-zinc-700 text-gray-700 dark:text-zinc-300'
-                      }`}
-                    >
-                      {user.role || 'User'}
-                    </span>
+                          : 'bg-gray-200 dark:bg-zinc-700 text-gray-700 dark:text-zinc-300';
+
+                      return (
+                        <span
+                          className={`px-2 py-1 text-xs rounded-md ${roleClass}`}
+                        >
+                          {roleLabel}
+                        </span>
+                      );
+                    })()}
                   </div>
                 </div>
               ))}

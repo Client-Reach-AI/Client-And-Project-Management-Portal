@@ -149,18 +149,7 @@ const buildWorkspacePayload = async (workspaceId, user) => {
 
 router.get('/', async (req, res, next) => {
   try {
-    const adminMemberships = await db
-      .select()
-      .from(workspaceMembers)
-      .where(
-        and(
-          eq(workspaceMembers.userId, req.user.id),
-          eq(workspaceMembers.role, 'ADMIN')
-        )
-      );
-
-    const canViewAll = adminMemberships.length > 0;
-    if (canViewAll) {
+    if (req.user.role === 'ADMIN') {
       const workspaceList = await db.select().from(workspaces);
       const workspaceIds = workspaceList.map((w) => w.id);
       const memberList = workspaceIds.length
@@ -249,12 +238,14 @@ router.get('/:id', async (req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
-    const { name, slug, ownerId, description, image_url } = req.body;
+    if (req.user.role !== 'ADMIN') {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
 
-    if (!name || !slug || !ownerId || !slug.trim()) {
-      return res
-        .status(400)
-        .json({ message: 'name, slug, and ownerId are required' });
+    const { name, slug, description, image_url } = req.body;
+
+    if (!name || !slug || !slug.trim()) {
+      return res.status(400).json({ message: 'name and slug are required' });
     }
 
     const workspaceId = generateId('org');
@@ -265,7 +256,7 @@ router.post('/', async (req, res, next) => {
       id: workspaceId,
       name,
       slug: uniqueSlug,
-      ownerId,
+      ownerId: req.user.id,
       description: description || null,
       image_url: image_url || null,
     });
@@ -273,7 +264,7 @@ router.post('/', async (req, res, next) => {
     await db.insert(workspaceMembers).values({
       id: memberId,
       workspaceId,
-      userId: ownerId,
+      userId: req.user.id,
       role: 'ADMIN',
       message: null,
     });

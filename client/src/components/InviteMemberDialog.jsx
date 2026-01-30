@@ -10,7 +10,7 @@ const InviteMemberDialog = ({ isDialogOpen, setIsDialogOpen }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
-    role: 'org:member',
+    role: 'workspace:member',
     projectId: '',
   });
 
@@ -19,7 +19,12 @@ const InviteMemberDialog = ({ isDialogOpen, setIsDialogOpen }) => {
     if (!currentWorkspace) return;
     try {
       setIsSubmitting(true);
-      const role = formData.role === 'org:admin' ? 'ADMIN' : 'MEMBER';
+      const roleMap = {
+        'global:admin': 'GLOBAL_ADMIN',
+        'workspace:admin': 'ADMIN',
+        'workspace:member': 'MEMBER',
+      };
+      const role = roleMap[formData.role] || 'MEMBER';
       const projectId = role === 'MEMBER' ? formData.projectId || null : null;
 
       if (role === 'MEMBER' && !projectId) {
@@ -109,12 +114,13 @@ const InviteMemberDialog = ({ isDialogOpen, setIsDialogOpen }) => {
               }
               className="w-full rounded border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-200 py-2 px-3 mt-1 focus:outline-none focus:border-blue-500 text-sm"
             >
-              <option value="org:member">Member</option>
-              <option value="org:admin">Admin</option>
+              <option value="workspace:member">Team Member</option>
+              <option value="workspace:admin">Workspace Admin</option>
+              <option value="global:admin">Global Admin</option>
             </select>
           </div>
 
-          {formData.role === 'org:member' && (
+          {formData.role === 'workspace:member' && (
             <div className="space-y-2">
               <label className="text-sm font-medium text-zinc-900 dark:text-zinc-200">
                 Project Access
