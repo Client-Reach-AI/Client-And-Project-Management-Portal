@@ -15,6 +15,7 @@ import {
   Zap,
 } from 'lucide-react';
 import Avatar from './Avatar';
+import { useSelector } from 'react-redux';
 
 const typeIcons = {
   BUG: { icon: Bug, color: 'text-red-600 dark:text-red-400' },
@@ -42,9 +43,10 @@ const priorityTexts = {
   },
 };
 
-const ProjectTasks = ({ tasks }) => {
+const ProjectTasks = ({ tasks, isAdmin, isTeamLead }) => {
   const navigate = useNavigate();
   const { currentWorkspace } = useWorkspaceContext();
+  const user = useSelector((state) => state.auth.user);
   const { mutateAsync: updateTask } = useUpdateTask();
   const { mutateAsync: deleteTasks } = useDeleteTasks();
   const [selectedTasks, setSelectedTasks] = useState([]);
@@ -92,9 +94,18 @@ const ProjectTasks = ({ tasks }) => {
     setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleStatusChange = async (taskId, newStatus) => {
+  const canEditStatus = (task) => {
+    if (isAdmin || isTeamLead) return true;
+    return task.assigneeId === user?.id || task.assignee?.id === user?.id;
+  };
+
+  const handleStatusChange = async (taskId, newStatus, task) => {
     try {
       if (!currentWorkspace) return;
+      if (!canEditStatus(task)) {
+        toast.error('You do not have permission to change this status');
+        return;
+      }
       toast.loading('Updating status...');
 
       await updateTask({
@@ -292,18 +303,28 @@ const ProjectTasks = ({ tasks }) => {
                           onClick={(e) => e.stopPropagation()}
                           className="px-4 py-2"
                         >
-                          <select
-                            name="status"
-                            onChange={(e) =>
-                              handleStatusChange(task.id, e.target.value)
-                            }
-                            value={task.status}
-                            className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 px-2 pr-6 py-1 rounded text-sm cursor-pointer"
-                          >
-                            <option value="TODO">To Do</option>
-                            <option value="IN_PROGRESS">In Progress</option>
-                            <option value="DONE">Done</option>
-                          </select>
+                          {canEditStatus(task) ? (
+                            <select
+                              name="status"
+                              onChange={(e) =>
+                                handleStatusChange(
+                                  task.id,
+                                  e.target.value,
+                                  task
+                                )
+                              }
+                              value={task.status}
+                              className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 px-2 pr-6 py-1 rounded text-sm cursor-pointer"
+                            >
+                              <option value="TODO">To Do</option>
+                              <option value="IN_PROGRESS">In Progress</option>
+                              <option value="DONE">Done</option>
+                            </select>
+                          ) : (
+                            <span className="text-xs px-2 py-1 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
+                              {task.status.replace('_', ' ')}
+                            </span>
+                          )}
                         </td>
                         <td className="px-4 py-2">
                           <div className="flex items-center gap-2">
@@ -393,18 +414,26 @@ const ProjectTasks = ({ tasks }) => {
                       <label className="text-zinc-600 dark:text-zinc-400 text-xs">
                         Status
                       </label>
-                      <select
-                        name="status"
-                        onChange={(e) =>
-                          handleStatusChange(task.id, e.target.value)
-                        }
-                        value={task.status}
-                        className="w-full mt-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 px-2 py-1 rounded text-sm"
-                      >
-                        <option value="TODO">To Do</option>
-                        <option value="IN_PROGRESS">In Progress</option>
-                        <option value="DONE">Done</option>
-                      </select>
+                      {canEditStatus(task) ? (
+                        <select
+                          name="status"
+                          onChange={(e) =>
+                            handleStatusChange(task.id, e.target.value, task)
+                          }
+                          value={task.status}
+                          className="w-full mt-1 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 px-2 py-1 rounded text-sm"
+                        >
+                          <option value="TODO">To Do</option>
+                          <option value="IN_PROGRESS">In Progress</option>
+                          <option value="DONE">Done</option>
+                        </select>
+                      ) : (
+                        <div className="mt-1">
+                          <span className="text-xs px-2 py-1 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
+                            {task.status.replace('_', ' ')}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
                       <Avatar

@@ -82,16 +82,17 @@ router.patch('/:id', async (req, res, next) => {
 
     if (!task) return res.status(404).json({ message: 'Task not found' });
 
+    const [project] = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, task.projectId))
+      .limit(1);
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
     if (req.user.role !== 'ADMIN') {
-      const [project] = await db
-        .select()
-        .from(projects)
-        .where(eq(projects.id, task.projectId))
-        .limit(1);
-
-      if (!project)
-        return res.status(404).json({ message: 'Project not found' });
-
       const admin = await isWorkspaceAdmin(req.user.id, project.workspaceId);
       if (!admin) {
         const [membership] = await db
@@ -110,6 +111,15 @@ router.patch('/:id', async (req, res, next) => {
     }
 
     const updates = req.body;
+    if (updates.status && req.user.role !== 'ADMIN') {
+      const isTeamLead = project.team_lead === req.user.id;
+      const isAssignee = task.assigneeId === req.user.id;
+      if (!isTeamLead && !isAssignee) {
+        return res
+          .status(403)
+          .json({ message: 'Not allowed to change status' });
+      }
+    }
     if (updates.due_date) updates.due_date = new Date(updates.due_date);
     updates.updatedAt = new Date();
 
