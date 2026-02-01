@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import { and, eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import {
@@ -15,7 +15,15 @@ import { requireAuth } from '../middleware/auth.js';
 import { isWorkspaceAdmin } from '../lib/permissions.js';
 
 const router = Router();
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 const stripSensitive = (user) => {
   if (!user) return user;
@@ -125,13 +133,13 @@ router.post('/', requireAuth, async (req, res, next) => {
     let emailSent = false;
     let emailError = null;
 
-    if (!process.env.RESEND_API_KEY) {
-      emailError = 'RESEND_API_KEY is not configured';
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      emailError = 'EMAIL_USER or EMAIL_PASS is not configured';
     } else {
       try {
-        await resend.emails.send({
-          from: process.env.RESEND_FROM || 'onboarding@resend.dev',
-          to: [email],
+        await transporter.sendMail({
+          from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+          to: email,
           subject: 'You have been invited to a workspace',
           html: `
             <p>You have been invited to join a workspace.</p>
