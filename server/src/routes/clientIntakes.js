@@ -14,6 +14,47 @@ const buildIntakeLink = (token) => {
   return `${baseUrl}/intake?token=${token}`;
 };
 
+const createIntakeRecord = async ({ workspaceId, clientId = null }) => {
+  const token = crypto.randomBytes(24).toString('hex');
+  const intakeId = generateId('intake');
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 14);
+
+  await db.insert(clientIntakes).values({
+    id: intakeId,
+    workspaceId,
+    clientId,
+    token,
+    status: 'OPEN',
+    expiresAt,
+  });
+
+  return { token, link: buildIntakeLink(token) };
+};
+
+router.post('/public', async (req, res, next) => {
+  try {
+    const { workspaceId } = req.body;
+    if (!workspaceId) {
+      return res.status(400).json({ message: 'workspaceId is required' });
+    }
+
+    const [workspace] = await db
+      .select()
+      .from(workspaces)
+      .where(eq(workspaces.id, workspaceId))
+      .limit(1);
+
+    if (!workspace) {
+      return res.status(404).json({ message: 'Workspace not found' });
+    }
+
+    const result = await createIntakeRecord({ workspaceId });
+    res.status(201).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get('/lookup', async (req, res, next) => {
   try {
     const { token } = req.query;
@@ -79,6 +120,8 @@ router.post('/submit', async (req, res, next) => {
 
     let clientId = intake.clientId || null;
 
+    const intakeSource = payload?.source === 'PUBLIC' ? 'PUBLIC' : 'INTAKE';
+
     if (!clientId) {
       const newClientId = generateId('client');
       const name =
@@ -110,7 +153,7 @@ router.post('/submit', async (req, res, next) => {
         uploadedFiles: payload?.uploaded_files || [],
         calendlyEventId: payload?.calendly_event_id || null,
         details: {
-          source: 'INTAKE',
+          source: intakeSource,
           intakeId: intake.id,
           serviceType: payload?.service_type || null,
           contactRole: payload?.contact_role || null,
@@ -196,21 +239,12 @@ router.post('/', async (req, res, next) => {
       (await isWorkspaceAdmin(req.user.id, workspaceId));
     if (!admin) return res.status(403).json({ message: 'Forbidden' });
 
-    const token = crypto.randomBytes(24).toString('hex');
-    const intakeId = generateId('intake');
-    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 14);
-
-    await db.insert(clientIntakes).values({
-      id: intakeId,
+    const result = await createIntakeRecord({
       workspaceId,
       clientId: clientId || null,
-      token,
-      status: 'OPEN',
-      expiresAt,
     });
 
-    const link = buildIntakeLink(token);
-    res.status(201).json({ link, token });
+    res.status(201).json(result);
   } catch (error) {
     next(error);
   }

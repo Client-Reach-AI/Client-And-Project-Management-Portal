@@ -225,6 +225,30 @@ const Clients = () => {
     }
   };
 
+  const publicIntakeUrl = currentWorkspace?.id
+    ? `${window.location.origin}/intake?workspaceId=${encodeURIComponent(
+        currentWorkspace.id
+      )}&source=public`
+    : '';
+
+  const handleCopyPublicIntake = async () => {
+    if (!publicIntakeUrl) {
+      toast.error('Workspace is required to generate a public link');
+      return;
+    }
+
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(publicIntakeUrl);
+        toast.success('Public intake link copied');
+      } else {
+        toast.success('Public intake link ready');
+      }
+    } catch (error) {
+      toast.error('Failed to copy public intake link');
+    }
+  };
+
   const openProjectFromIntake = async (intake) => {
     if (!intake) return;
 
@@ -326,6 +350,25 @@ const Clients = () => {
   };
 
   const intakePayload = selectedIntake?.payload || {};
+  const DetailItem = ({ label, value, multiline = false }) => {
+    const displayValue =
+      value === null || value === undefined || value === '' ? 'N/A' : value;
+
+    return (
+      <div className="min-w-0">
+        <p className="text-[11px] uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
+          {label}
+        </p>
+        <p
+          className={`text-sm text-zinc-900 dark:text-zinc-100 break-words ${
+            multiline ? 'whitespace-pre-wrap' : ''
+          }`}
+        >
+          {displayValue}
+        </p>
+      </div>
+    );
+  };
 
   if (!isAdmin) {
     return (
@@ -350,18 +393,25 @@ const Clients = () => {
             client submissions.
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <button
             onClick={handleGenerateIntake}
-            className="flex items-center gap-2 px-4 py-2 rounded border border-zinc-300 dark:border-zinc-700 text-sm text-zinc-700 dark:text-zinc-200"
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded border border-zinc-300 dark:border-zinc-700 text-sm text-zinc-700 dark:text-zinc-200 w-full sm:w-auto whitespace-nowrap"
             disabled={intakePending}
           >
             <LinkIcon className="size-4" />
             {intakePending ? 'Generating...' : 'Generate Intake Link'}
           </button>
           <button
+            onClick={handleCopyPublicIntake}
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded border border-zinc-300 dark:border-zinc-700 text-sm text-zinc-700 dark:text-zinc-200 w-full sm:w-auto whitespace-nowrap"
+          >
+            <LinkIcon className="size-4" />
+            Copy Public Intake Link
+          </button>
+          <button
             onClick={() => setIsCreateOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded bg-linear-to-br from-blue-500 to-blue-600 text-white text-sm"
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded bg-linear-to-br from-blue-500 to-blue-600 text-white text-sm w-full sm:w-auto whitespace-nowrap"
           >
             <Plus className="size-4" /> New Client
           </button>
@@ -635,14 +685,14 @@ const Clients = () => {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredClients.map((client) => (
           <div
             key={client.id}
-            className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-2"
+            className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-2 min-w-0"
           >
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="min-w-0">
                 <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
                   {client.name}
                 </h3>
@@ -650,25 +700,36 @@ const Clients = () => {
                   {client.company || client.industry || 'Client'}
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {client.details?.source === 'PUBLIC' && (
+                  <span className="text-[10px] px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">
+                    Client-submitted
+                  </span>
+                )}
                 {client.details?.source === 'INTAKE' && (
                   <span className="text-[10px] px-2 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
-                    Client-submitted
+                    Intake link
                   </span>
                 )}
                 <button
                   type="button"
                   onClick={() => openClientDetails(client)}
-                  className="text-xs px-3 py-1 rounded border border-zinc-300 dark:border-zinc-700"
+                  className="text-xs px-3 py-1 rounded border border-zinc-300 dark:border-zinc-700 w-full sm:w-auto"
                 >
                   View Details
                 </button>
               </div>
             </div>
-            <div className="text-xs text-zinc-500 dark:text-zinc-400 space-y-1">
-              {client.email && <div>Email: {client.email}</div>}
-              {client.phone && <div>Phone: {client.phone}</div>}
-              {client.website && <div>Website: {client.website}</div>}
+            <div className="text-xs text-zinc-500 dark:text-zinc-400 space-y-1 break-words">
+              {client.email && (
+                <div className="break-words">Email: {client.email}</div>
+              )}
+              {client.phone && (
+                <div className="break-words">Phone: {client.phone}</div>
+              )}
+              {client.website && (
+                <div className="break-words">Website: {client.website}</div>
+              )}
             </div>
           </div>
         ))}
@@ -692,7 +753,7 @@ const Clients = () => {
                 key={intake.id}
                 className="border border-zinc-200 dark:border-zinc-800 rounded-md p-4"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold text-zinc-900 dark:text-white">
                       {getIntakeDisplayName(intake.payload)}
@@ -704,18 +765,18 @@ const Clients = () => {
                         : 'N/A'}
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <button
                       type="button"
                       onClick={() => openDetails(intake)}
-                      className="text-xs px-3 py-1 rounded border border-zinc-300 dark:border-zinc-700"
+                      className="text-xs px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 w-full sm:w-auto"
                     >
                       View Details
                     </button>
                     <button
                       type="button"
                       onClick={() => openProjectFromIntake(intake)}
-                      className="text-xs px-3 py-1 rounded bg-linear-to-br from-blue-500 to-blue-600 text-white"
+                      className="text-xs px-3 py-2 rounded bg-linear-to-br from-blue-500 to-blue-600 text-white w-full sm:w-auto"
                     >
                       Create Project
                     </button>
@@ -881,7 +942,7 @@ const Clients = () => {
 
       {selectedClient && (
         <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex justify-end">
-          <div className="bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 w-full max-w-lg h-full p-6 overflow-y-auto">
+          <div className="bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 w-full lg:w-1/2 xl:w-[50vw] h-full p-6 overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
@@ -899,233 +960,171 @@ const Clients = () => {
                 <X className="size-4" />
               </button>
             </div>
-
-            <div className="space-y-6 text-sm text-zinc-600 dark:text-zinc-300">
-              <div>
-                <p className="font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
+            <div className="space-y-5">
+              <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 p-4">
+                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
                   Contact
                 </p>
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Name
-                    </span>
-                    <span>{selectedClient.name || 'N/A'}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Company
-                    </span>
-                    <span>{selectedClient.company || 'N/A'}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Email
-                    </span>
-                    <span>{selectedClient.email || 'N/A'}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Phone
-                    </span>
-                    <span>{selectedClient.phone || 'N/A'}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Website
-                    </span>
-                    <span>{selectedClient.website || 'N/A'}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Industry
-                    </span>
-                    <span>{selectedClient.industry || 'N/A'}</span>
-                  </div>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <DetailItem label="Name" value={selectedClient.name} />
+                  <DetailItem label="Company" value={selectedClient.company} />
+                  <DetailItem label="Email" value={selectedClient.email} />
+                  <DetailItem label="Phone" value={selectedClient.phone} />
+                  <DetailItem label="Website" value={selectedClient.website} />
+                  <DetailItem
+                    label="Industry"
+                    value={selectedClient.industry}
+                  />
                 </div>
               </div>
-              <div>
-                <p className="font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
+
+              <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 p-4">
+                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
                   Project Preferences
                 </p>
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Primary Contact
-                    </span>
-                    <span>
-                      {selectedClient.contactName ||
-                        selectedClient.details?.contactName ||
-                        'N/A'}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Contact Role
-                    </span>
-                    <span>
-                      {selectedClient.contactRole ||
-                        selectedClient.details?.contactRole ||
-                        'N/A'}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Address
-                    </span>
-                    <span>{selectedClient.details?.address || 'N/A'}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Goals
-                    </span>
-                    <span>{selectedClient.details?.goals || 'N/A'}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Budget
-                    </span>
-                    <span>{selectedClient.details?.budget || 'N/A'}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Timeline
-                    </span>
-                    <span>{selectedClient.details?.timeline || 'N/A'}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Audience
-                    </span>
-                    <span>{selectedClient.details?.targetAudience || 'N/A'}</span>
-                  </div>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <DetailItem
+                    label="Primary Contact"
+                    value={
+                      selectedClient.contactName ||
+                      selectedClient.details?.contactName
+                    }
+                  />
+                  <DetailItem
+                    label="Contact Role"
+                    value={
+                      selectedClient.contactRole ||
+                      selectedClient.details?.contactRole
+                    }
+                  />
+                  <DetailItem
+                    label="Address"
+                    value={selectedClient.details?.address}
+                  />
+                  <DetailItem
+                    label="Goals"
+                    value={selectedClient.details?.goals}
+                    multiline
+                  />
+                  <DetailItem
+                    label="Budget"
+                    value={selectedClient.details?.budget}
+                  />
+                  <DetailItem
+                    label="Timeline"
+                    value={selectedClient.details?.timeline}
+                  />
+                  <DetailItem
+                    label="Audience"
+                    value={selectedClient.details?.targetAudience}
+                    multiline
+                  />
                 </div>
               </div>
-              <div>
-                <p className="font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
+
+              <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 p-4">
+                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
                   Service Intake
                 </p>
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Service
-                    </span>
-                    <span>
-                      {selectedClient.serviceType ||
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <DetailItem
+                    label="Service"
+                    value={
+                      selectedClient.serviceType ||
                       selectedClient.details?.serviceType
                         ? getServiceLabel(
                             selectedClient.serviceType ||
                               selectedClient.details?.serviceType
                           )
-                        : 'N/A'}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Contact Role
-                    </span>
-                    <span>
-                      {selectedClient.contactRole ||
-                        selectedClient.details?.contactRole ||
-                        'N/A'}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Problem
-                    </span>
-                    <span>
-                      {selectedClient.businessDetails?.problem_solving ||
-                        selectedClient.details?.businessDetails?.problem_solving ||
-                        'N/A'}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      90-Day Success
-                    </span>
-                    <span>
-                      {selectedClient.businessDetails?.success_90_days ||
-                        selectedClient.details?.businessDetails?.success_90_days ||
-                        'N/A'}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Launch Date
-                    </span>
-                    <span>
-                      {selectedClient.businessDetails?.launch_date ||
-                        selectedClient.details?.businessDetails?.launch_date ||
-                        'N/A'}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Biggest Concern
-                    </span>
-                    <span>
-                      {selectedClient.businessDetails?.biggest_concern ||
-                        selectedClient.details?.businessDetails?.biggest_concern ||
-                        'N/A'}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Service Details
-                    </span>
-                    <span className="whitespace-pre-line">
-                      {buildServiceSummary({
-                        service_type:
-                          selectedClient.serviceType ||
-                          selectedClient.details?.serviceType,
-                        service_responses:
-                          selectedClient.serviceResponses ||
-                          selectedClient.details?.serviceResponses,
-                      }) || 'N/A'}
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Brand Guidelines
-                    </span>
-                    <span>{selectedClient.details?.brandGuidelines || 'N/A'}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Competitors
-                    </span>
-                    <span>{selectedClient.details?.competitors || 'N/A'}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Success Metrics
-                    </span>
-                    <span>{selectedClient.details?.successMetrics || 'N/A'}</span>
-                  </div>
+                        : null
+                    }
+                  />
+                  <DetailItem
+                    label="Contact Role"
+                    value={
+                      selectedClient.contactRole ||
+                      selectedClient.details?.contactRole
+                    }
+                  />
+                  <DetailItem
+                    label="Problem"
+                    value={
+                      selectedClient.businessDetails?.problem_solving ||
+                      selectedClient.details?.businessDetails?.problem_solving
+                    }
+                    multiline
+                  />
+                  <DetailItem
+                    label="90-Day Success"
+                    value={
+                      selectedClient.businessDetails?.success_90_days ||
+                      selectedClient.details?.businessDetails?.success_90_days
+                    }
+                    multiline
+                  />
+                  <DetailItem
+                    label="Launch Date"
+                    value={
+                      selectedClient.businessDetails?.launch_date ||
+                      selectedClient.details?.businessDetails?.launch_date
+                    }
+                  />
+                  <DetailItem
+                    label="Biggest Concern"
+                    value={
+                      selectedClient.businessDetails?.biggest_concern ||
+                      selectedClient.details?.businessDetails?.biggest_concern
+                    }
+                    multiline
+                  />
+                  <DetailItem
+                    label="Service Details"
+                    multiline
+                    value={buildServiceSummary({
+                      service_type:
+                        selectedClient.serviceType ||
+                        selectedClient.details?.serviceType,
+                      service_responses:
+                        selectedClient.serviceResponses ||
+                        selectedClient.details?.serviceResponses,
+                    })}
+                  />
+                  <DetailItem
+                    label="Brand Guidelines"
+                    value={selectedClient.details?.brandGuidelines}
+                    multiline
+                  />
+                  <DetailItem
+                    label="Competitors"
+                    value={selectedClient.details?.competitors}
+                    multiline
+                  />
+                  <DetailItem
+                    label="Success Metrics"
+                    value={selectedClient.details?.successMetrics}
+                    multiline
+                  />
                 </div>
               </div>
-              <div>
-                <p className="font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
+
+              <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 p-4">
+                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
                   Notes
                 </p>
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Notes
-                    </span>
-                    <span>{selectedClient.details?.notes || 'N/A'}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
-                      Uploaded Files
-                    </span>
-                    <span>
-                      {selectedClient.uploadedFiles?.length ||
-                        selectedClient.details?.uploadedFiles?.length ||
-                        0}
-                    </span>
-                  </div>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <DetailItem
+                    label="Notes"
+                    value={selectedClient.details?.notes}
+                    multiline
+                  />
+                  <DetailItem
+                    label="Uploaded Files"
+                    value={
+                      selectedClient.uploadedFiles?.length ||
+                      selectedClient.details?.uploadedFiles?.length ||
+                      0
+                    }
+                  />
                 </div>
               </div>
             </div>

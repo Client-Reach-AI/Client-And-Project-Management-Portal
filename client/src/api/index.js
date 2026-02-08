@@ -119,6 +119,12 @@ export const createClientIntake = async (payload) =>
     body: JSON.stringify(payload),
   });
 
+export const createPublicClientIntake = async (payload) =>
+  apiFetch('/api/client-intakes/public', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
 export const lookupClientIntake = async (token) =>
   apiFetch(`/api/client-intakes/lookup?token=${encodeURIComponent(token)}`);
 

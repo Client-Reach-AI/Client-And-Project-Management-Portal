@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -10,7 +10,10 @@ import {
   Code,
 } from 'lucide-react';
 import { useClientIntakeLookup } from '../hooks/useQueries';
-import { useSubmitClientIntake } from '../hooks/useMutations';
+import {
+  useCreatePublicClientIntake,
+  useSubmitClientIntake,
+} from '../hooks/useMutations';
 
 const SERVICES = [
   {
@@ -1130,20 +1133,60 @@ const SummaryStep = ({ data, onBack, onSubmit, isLoading }) => {
 const ClientIntake = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
+  const workspaceIdParam = searchParams.get('workspaceId');
+  const sourceParam = searchParams.get('source');
+  const intakeSource = sourceParam === 'public' ? 'PUBLIC' : 'INTAKE';
+  const [intakeToken, setIntakeToken] = useState(token);
+  const [publicInitError, setPublicInitError] = useState(null);
 
   const {
     data: intake,
     isLoading,
     isError,
-  } = useClientIntakeLookup(token, {
-    enabled: Boolean(token),
+  } = useClientIntakeLookup(intakeToken, {
+    enabled: Boolean(intakeToken),
     retry: false,
   });
   const { mutateAsync: submitIntake, isPending } = useSubmitClientIntake();
+  const { mutateAsync: createPublicIntake, isPending: isPublicPending } =
+    useCreatePublicClientIntake();
+
+  useEffect(() => {
+    setIntakeToken(token);
+  }, [token]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const initializePublicIntake = async () => {
+      if (token || intakeToken || !workspaceIdParam) return;
+
+      try {
+        const result = await createPublicIntake({
+          workspaceId: workspaceIdParam,
+        });
+        if (isActive) {
+          setIntakeToken(result?.token || null);
+          setPublicInitError(null);
+        }
+      } catch (error) {
+        if (isActive) {
+          setPublicInitError(error?.message || 'Failed to start intake');
+        }
+      }
+    };
+
+    initializePublicIntake();
+
+    return () => {
+      isActive = false;
+    };
+  }, [token, intakeToken, workspaceIdParam, createPublicIntake]);
 
   const [step, setStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState({
+    source: intakeSource,
     service_type: undefined,
     company_name: '',
     contact_name: '',
@@ -1226,7 +1269,7 @@ const ClientIntake = () => {
   const handleSubmit = async () => {
     try {
       await submitIntake({
-        token,
+        token: intakeToken,
         payload: formData,
       });
       toast.success('Onboarding complete!');
@@ -1236,7 +1279,7 @@ const ClientIntake = () => {
     }
   };
 
-  if (!token) {
+  if (!intakeToken && !workspaceIdParam) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black px-4">
         <div className={`${cardClassName} max-w-lg w-full p-8 text-center`}>
@@ -1251,7 +1294,30 @@ const ClientIntake = () => {
     );
   }
 
-  if (isLoading) {
+  if (!intakeToken && workspaceIdParam && !publicInitError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <div className={`${cardClassName} p-6 text-sm text-gray-300`}>
+          Preparing intake form...
+        </div>
+      </div>
+    );
+  }
+
+  if (publicInitError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black px-4">
+        <div className={`${cardClassName} max-w-lg w-full p-8 text-center`}>
+          <h1 className="text-2xl font-semibold text-white">
+            Intake form unavailable
+          </h1>
+          <p className="text-sm text-gray-400 mt-2">{publicInitError}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading || isPublicPending) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black">
         <div className={`${cardClassName} p-6 text-sm text-gray-300`}>

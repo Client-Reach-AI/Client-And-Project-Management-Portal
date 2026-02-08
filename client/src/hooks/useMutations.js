@@ -21,6 +21,7 @@ import {
   updateUser,
   updateWorkspace,
   deleteWorkspace,
+  createPublicClientIntake,
 } from '../api';
 import {
   clientKeys,
@@ -44,6 +45,11 @@ export const useCreateWorkspace = () => {
     },
   });
 };
+
+export const useCreatePublicClientIntake = () =>
+  useMutation({
+    mutationFn: createPublicClientIntake,
+  });
 
 export const useUpdateWorkspace = () => {
   const queryClient = useQueryClient();
