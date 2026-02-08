@@ -861,18 +861,6 @@ const Clients = () => {
                   </span>
                 </p>
               </div>
-              <div>
-                <p className="font-medium text-zinc-900 dark:text-zinc-100">
-                  Assets & Booking
-                </p>
-                <p>
-                  Files: {selectedDetails.payload?.uploaded_files?.length || 0}
-                </p>
-                <p>
-                  Calendly Event:{' '}
-                  {selectedDetails.payload?.calendly_event_id || 'N/A'}
-                </p>
-              </div>
             </div>
 
             <div className="mt-6 flex gap-2">
@@ -912,119 +900,233 @@ const Clients = () => {
               </button>
             </div>
 
-            <div className="space-y-4 text-sm text-zinc-600 dark:text-zinc-300">
+            <div className="space-y-6 text-sm text-zinc-600 dark:text-zinc-300">
               <div>
-                <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                <p className="font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
                   Contact
                 </p>
-                <p>Name: {selectedClient.name || 'N/A'}</p>
-                <p>Company: {selectedClient.company || 'N/A'}</p>
-                <p>Email: {selectedClient.email || 'N/A'}</p>
-                <p>Phone: {selectedClient.phone || 'N/A'}</p>
-                <p>Website: {selectedClient.website || 'N/A'}</p>
-                <p>Industry: {selectedClient.industry || 'N/A'}</p>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Name
+                    </span>
+                    <span>{selectedClient.name || 'N/A'}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Company
+                    </span>
+                    <span>{selectedClient.company || 'N/A'}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Email
+                    </span>
+                    <span>{selectedClient.email || 'N/A'}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Phone
+                    </span>
+                    <span>{selectedClient.phone || 'N/A'}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Website
+                    </span>
+                    <span>{selectedClient.website || 'N/A'}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Industry
+                    </span>
+                    <span>{selectedClient.industry || 'N/A'}</span>
+                  </div>
+                </div>
               </div>
               <div>
-                <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                <p className="font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
                   Project Preferences
                 </p>
-                <p>
-                  Primary Contact:{' '}
-                  {selectedClient.contactName ||
-                    selectedClient.details?.contactName ||
-                    'N/A'}
-                </p>
-                <p>
-                  Contact Role:{' '}
-                  {selectedClient.contactRole ||
-                    selectedClient.details?.contactRole ||
-                    'N/A'}
-                </p>
-                <p>Address: {selectedClient.details?.address || 'N/A'}</p>
-                <p>Goals: {selectedClient.details?.goals || 'N/A'}</p>
-                <p>Budget: {selectedClient.details?.budget || 'N/A'}</p>
-                <p>Timeline: {selectedClient.details?.timeline || 'N/A'}</p>
-                <p>
-                  Audience: {selectedClient.details?.targetAudience || 'N/A'}
-                </p>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Primary Contact
+                    </span>
+                    <span>
+                      {selectedClient.contactName ||
+                        selectedClient.details?.contactName ||
+                        'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Contact Role
+                    </span>
+                    <span>
+                      {selectedClient.contactRole ||
+                        selectedClient.details?.contactRole ||
+                        'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Address
+                    </span>
+                    <span>{selectedClient.details?.address || 'N/A'}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Goals
+                    </span>
+                    <span>{selectedClient.details?.goals || 'N/A'}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Budget
+                    </span>
+                    <span>{selectedClient.details?.budget || 'N/A'}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Timeline
+                    </span>
+                    <span>{selectedClient.details?.timeline || 'N/A'}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Audience
+                    </span>
+                    <span>{selectedClient.details?.targetAudience || 'N/A'}</span>
+                  </div>
+                </div>
               </div>
               <div>
-                <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                <p className="font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
                   Service Intake
                 </p>
-                <p>
-                  Service:{' '}
-                  {selectedClient.serviceType ||
-                  selectedClient.details?.serviceType
-                    ? getServiceLabel(
-                        selectedClient.serviceType ||
-                          selectedClient.details?.serviceType
-                      )
-                    : 'N/A'}
-                </p>
-                <p>
-                  Contact Role: {selectedClient.details?.contactRole || 'N/A'}
-                </p>
-                <p>
-                  Problem:{' '}
-                  {selectedClient.businessDetails?.problem_solving ||
-                    selectedClient.details?.businessDetails?.problem_solving ||
-                    'N/A'}
-                </p>
-                <p>
-                  90-Day Success:{' '}
-                  {selectedClient.businessDetails?.success_90_days ||
-                    selectedClient.details?.businessDetails?.success_90_days ||
-                    'N/A'}
-                </p>
-                <p>
-                  Launch Date:{' '}
-                  {selectedClient.businessDetails?.launch_date ||
-                    selectedClient.details?.businessDetails?.launch_date ||
-                    'N/A'}
-                </p>
-                <p>
-                  Biggest Concern:{' '}
-                  {selectedClient.businessDetails?.biggest_concern ||
-                    selectedClient.details?.businessDetails?.biggest_concern ||
-                    'N/A'}
-                </p>
-                <p>
-                  Service Details:{' '}
-                  <span className="whitespace-pre-line">
-                    {buildServiceSummary({
-                      service_type:
-                        selectedClient.serviceType ||
-                        selectedClient.details?.serviceType,
-                      service_responses:
-                        selectedClient.serviceResponses ||
-                        selectedClient.details?.serviceResponses,
-                    }) || 'N/A'}
-                  </span>
-                </p>
-                <p>
-                  Brand Guidelines:{' '}
-                  {selectedClient.details?.brandGuidelines || 'N/A'}
-                </p>
-                <p>
-                  Competitors: {selectedClient.details?.competitors || 'N/A'}
-                </p>
-                <p>
-                  Success Metrics:{' '}
-                  {selectedClient.details?.successMetrics || 'N/A'}
-                </p>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Service
+                    </span>
+                    <span>
+                      {selectedClient.serviceType ||
+                      selectedClient.details?.serviceType
+                        ? getServiceLabel(
+                            selectedClient.serviceType ||
+                              selectedClient.details?.serviceType
+                          )
+                        : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Contact Role
+                    </span>
+                    <span>
+                      {selectedClient.contactRole ||
+                        selectedClient.details?.contactRole ||
+                        'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Problem
+                    </span>
+                    <span>
+                      {selectedClient.businessDetails?.problem_solving ||
+                        selectedClient.details?.businessDetails?.problem_solving ||
+                        'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      90-Day Success
+                    </span>
+                    <span>
+                      {selectedClient.businessDetails?.success_90_days ||
+                        selectedClient.details?.businessDetails?.success_90_days ||
+                        'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Launch Date
+                    </span>
+                    <span>
+                      {selectedClient.businessDetails?.launch_date ||
+                        selectedClient.details?.businessDetails?.launch_date ||
+                        'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Biggest Concern
+                    </span>
+                    <span>
+                      {selectedClient.businessDetails?.biggest_concern ||
+                        selectedClient.details?.businessDetails?.biggest_concern ||
+                        'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Service Details
+                    </span>
+                    <span className="whitespace-pre-line">
+                      {buildServiceSummary({
+                        service_type:
+                          selectedClient.serviceType ||
+                          selectedClient.details?.serviceType,
+                        service_responses:
+                          selectedClient.serviceResponses ||
+                          selectedClient.details?.serviceResponses,
+                      }) || 'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Brand Guidelines
+                    </span>
+                    <span>{selectedClient.details?.brandGuidelines || 'N/A'}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Competitors
+                    </span>
+                    <span>{selectedClient.details?.competitors || 'N/A'}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Success Metrics
+                    </span>
+                    <span>{selectedClient.details?.successMetrics || 'N/A'}</span>
+                  </div>
+                </div>
               </div>
               <div>
-                <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                <p className="font-semibold text-zinc-900 dark:text-zinc-100 mb-3">
                   Notes
                 </p>
-                <p>{selectedClient.details?.notes || 'N/A'}</p>
-                <p>
-                  Uploaded Files:{' '}
-                  {selectedClient.uploadedFiles?.length ||
-                    selectedClient.details?.uploadedFiles?.length ||
-                    0}
-                </p>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Notes
+                    </span>
+                    <span>{selectedClient.details?.notes || 'N/A'}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="font-semibold text-zinc-700 dark:text-zinc-200 w-32">
+                      Uploaded Files
+                    </span>
+                    <span>
+                      {selectedClient.uploadedFiles?.length ||
+                        selectedClient.details?.uploadedFiles?.length ||
+                        0}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
