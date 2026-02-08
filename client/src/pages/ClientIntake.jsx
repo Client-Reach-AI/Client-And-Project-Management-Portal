@@ -1,12 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useSearchParams } from 'react-router-dom';
 import {
   CheckCircle,
   Check,
-  Upload,
-  X,
-  File,
   Globe,
   PhoneCall,
   Settings,
@@ -59,7 +56,7 @@ const STEP_TITLES = [
   'Service Selection',
   'Business Details',
   'Requirements',
-  'Assets & Booking',
+  'Summary',
 ];
 
 const cardClassName =
@@ -417,6 +414,127 @@ const BusinessDetails = ({ data, updateData, onNext, onBack }) => {
             value={data.business_details?.biggest_concern || ''}
             onChange={(e) => updateDetails('biggest_concern', e.target.value)}
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-400 mb-2">
+            Address
+          </label>
+          <input
+            type="text"
+            placeholder="123 Market St, City"
+            className={inputClassName}
+            value={data.address || ''}
+            onChange={(e) => updateData({ address: e.target.value })}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-2">
+              Goals
+            </label>
+            <textarea
+              rows={3}
+              placeholder="What do you want to achieve?"
+              className={inputClassName}
+              value={data.goals || ''}
+              onChange={(e) => updateData({ goals: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-2">
+              Target Audience
+            </label>
+            <textarea
+              rows={3}
+              placeholder="Who is this for?"
+              className={inputClassName}
+              value={data.targetAudience || ''}
+              onChange={(e) => updateData({ targetAudience: e.target.value })}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-2">
+              Budget
+            </label>
+            <input
+              type="text"
+              placeholder="$15k - $30k"
+              className={inputClassName}
+              value={data.budget || ''}
+              onChange={(e) => updateData({ budget: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-2">
+              Timeline
+            </label>
+            <input
+              type="text"
+              placeholder="6-8 weeks"
+              className={inputClassName}
+              value={data.timeline || ''}
+              onChange={(e) => updateData({ timeline: e.target.value })}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-2">
+              Brand Guidelines
+            </label>
+            <textarea
+              rows={3}
+              placeholder="Tone, colors, references"
+              className={inputClassName}
+              value={data.brandGuidelines || ''}
+              onChange={(e) => updateData({ brandGuidelines: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-2">
+              Competitors
+            </label>
+            <textarea
+              rows={3}
+              placeholder="Who do you compare against?"
+              className={inputClassName}
+              value={data.competitors || ''}
+              onChange={(e) => updateData({ competitors: e.target.value })}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-2">
+              Success Metrics
+            </label>
+            <textarea
+              rows={3}
+              placeholder="How will you measure success?"
+              className={inputClassName}
+              value={data.successMetrics || ''}
+              onChange={(e) => updateData({ successMetrics: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-2">
+              Notes
+            </label>
+            <textarea
+              rows={3}
+              placeholder="Anything else we should know?"
+              className={inputClassName}
+              value={data.notes || ''}
+              onChange={(e) => updateData({ notes: e.target.value })}
+            />
+          </div>
         </div>
       </div>
 
@@ -781,165 +899,209 @@ const ServiceQuestions = ({
   );
 };
 
-const AssetsAndBooking = ({
-  files,
-  updateFiles,
-  onBack,
-  onSubmit,
-  isLoading,
-}) => {
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef(null);
-
-  const handleFileDrop = (event) => {
-    event.preventDefault();
-    setIsDragging(false);
-    if (event.dataTransfer.files) {
-      const uploadedFiles = Array.from(event.dataTransfer.files).map(
-        (file) => ({
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          url: '#',
-        })
-      );
-      updateFiles([...files, ...uploadedFiles]);
+const SummaryStep = ({ data, onBack, onSubmit, isLoading }) => {
+  const serviceLabel = SERVICES.find((item) => item.id === data.service_type)
+    ?.title;
+  const serviceDetails = (() => {
+    const responses = data.service_responses || {};
+    if (data.service_type === 'website_build') {
+      return [
+        responses.has_site && `Has site: ${responses.has_site}`,
+        responses.current_url && `Current URL: ${responses.current_url}`,
+        (responses.features || []).length > 0 &&
+          `Features: ${(responses.features || []).join(', ')}`,
+        responses.style && `Style: ${responses.style}`,
+      ]
+        .filter(Boolean)
+        .join('\n');
     }
-  };
-
-  const handleFileSelect = (event) => {
-    if (event.target.files) {
-      const uploadedFiles = Array.from(event.target.files).map((file) => ({
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        url: '#',
-      }));
-      updateFiles([...files, ...uploadedFiles]);
+    if (data.service_type === 'ai_receptionist') {
+      return [
+        responses.daily_calls && `Daily calls: ${responses.daily_calls}`,
+        responses.frustration && `Frustration: ${responses.frustration}`,
+        (responses.data_points || []).length > 0 &&
+          `Info to collect: ${(responses.data_points || []).join(', ')}`,
+        responses.forward_phone && `Forward phone: ${responses.forward_phone}`,
+      ]
+        .filter(Boolean)
+        .join('\n');
     }
-  };
-
-  const removeFile = (index) => {
-    updateFiles(files.filter((_, i) => i !== index));
-  };
-
-  const getCalendlyUrl = () => {
-    const baseUrl =
-      'https://calendly.com/your-username/30min?embed_type=Inline';
-    try {
-      if (typeof window !== 'undefined' && window.location?.hostname) {
-        return `${baseUrl}&embed_domain=${window.location.hostname}`;
-      }
-    } catch {
-      return baseUrl;
+    if (data.service_type === 'ai_automation') {
+      return [
+        responses.tasks && `Tasks: ${responses.tasks}`,
+        responses.tools && `Tools: ${responses.tools}`,
+        responses.volume && `Volume: ${responses.volume}`,
+        responses.workflow && `Workflow: ${responses.workflow}`,
+      ]
+        .filter(Boolean)
+        .join('\n');
     }
-    return baseUrl;
-  };
+    if (data.service_type === 'software_build') {
+      return [
+        responses.sw_type && `Type: ${responses.sw_type}`,
+        responses.problem && `Problem: ${responses.problem}`,
+        responses.sw_features && `Features: ${responses.sw_features}`,
+      ]
+        .filter(Boolean)
+        .join('\n');
+    }
+    return '';
+  })();
 
   return (
-    <div className="space-y-12 max-w-3xl mx-auto">
+    <div className="space-y-8 max-w-3xl mx-auto">
       <div className="text-center">
-        <h2 className="text-3xl font-bold mb-2">
-          Final Step: Assets & Booking
-        </h2>
-        <p className="text-gray-400 text-lg">Help us get ready for our call</p>
+        <h2 className="text-3xl font-bold mb-2">Review Your Details</h2>
+        <p className="text-gray-400 text-lg">
+          Please confirm everything before submitting.
+        </p>
       </div>
 
-      <section>
-        <div className="flex items-center gap-3 mb-6">
-          <Upload className="text-[#3191C4]" />
-          <h3 className="text-xl font-semibold">Upload Relevant Files</h3>
-        </div>
-
-        <input
-          type="file"
-          multiple
-          className="hidden"
-          ref={fileInputRef}
-          onChange={handleFileSelect}
-        />
-
-        <div
-          onDragOver={(event) => {
-            event.preventDefault();
-            setIsDragging(true);
-          }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={handleFileDrop}
-          className={`
-            border-2 border-dashed rounded-3xl p-10 text-center transition-all cursor-pointer
-            ${
-              isDragging
-                ? 'border-[#3191C4] bg-[#3191C4]/5'
-                : 'border-white/10 bg-white/5'
-            }
-          `}
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <Upload className="w-12 h-12 text-[#3191C4] mx-auto mb-4" />
-          <p className="text-lg font-medium">
-            Drag files here or click to browse
+      <div className="grid gap-6">
+        <div className={`${cardClassName} p-6`}>
+          <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
+            Contact
           </p>
-          <p className="text-gray-500 text-sm mt-2">
-            Images, PDFs, Docs up to 10MB
+          <div className="mt-4 grid sm:grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-gray-400">Name</p>
+              <p>{data.contact_name || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-gray-400">Role</p>
+              <p>{data.contact_role || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-gray-400">Email</p>
+              <p>{data.email || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-gray-400">Phone</p>
+              <p>{data.phone || 'N/A'}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className={`${cardClassName} p-6`}>
+          <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
+            Business
           </p>
-        </div>
-
-        {files.length > 0 && (
-          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {files.map((file, idx) => (
-              <div
-                key={`${file.name}-${idx}`}
-                className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-center justify-between"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <File className="w-5 h-5 text-[#3191C4] shrink-0" />
-                  <div className="truncate">
-                    <p className="text-sm font-medium truncate">{file.name}</p>
-                    <p className="text-xs text-gray-500">
-                      {(file.size / 1024).toFixed(1)} KB
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    removeFile(idx);
-                  }}
-                  className="p-1 hover:text-red-500"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
+          <div className="mt-4 grid sm:grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-gray-400">Company</p>
+              <p>{data.company_name || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-gray-400">Website</p>
+              <p className="wrap-break-word">{data.company_website || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-gray-400">Address</p>
+              <p>{data.address || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-gray-400">Industry</p>
+              <p>{data.industry || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-gray-400">Launch Date</p>
+              <p>{data.business_details?.launch_date || 'N/A'}</p>
+            </div>
           </div>
-        )}
-      </section>
-
-      <div className="h-px bg-white/10" />
-
-      <section>
-        <div className="flex items-center gap-3 mb-6">
-          <CheckCircle className="text-[#3191C4]" />
-          <h3 className="text-xl font-semibold">Schedule Your Strategy Call</h3>
-        </div>
-
-        <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden min-h-150 flex items-center justify-center relative">
-          <div className="absolute inset-0 bg-[#111111]/50 backdrop-blur-sm flex flex-col items-center justify-center p-8 text-center z-10 pointer-events-none">
-            <CheckCircle className="w-16 h-16 text-[#3191C4] mb-4" />
-            <p className="text-xl font-bold">
-              Calendly Integration Placeholder
-            </p>
-            <p className="text-gray-400 mt-2">
-              In production, your custom booking calendar will appear here.
-            </p>
+          <div className="mt-4 text-sm space-y-3">
+            <div>
+              <p className="text-gray-400">Problem</p>
+              <p className="whitespace-pre-wrap wrap-break-word">
+                {data.business_details?.problem_solving || 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-400">90-Day Success</p>
+              <p className="whitespace-pre-wrap wrap-break-word">
+                {data.business_details?.success_90_days || 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-400">Biggest Concern</p>
+              <p className="whitespace-pre-wrap wrap-break-word">
+                {data.business_details?.biggest_concern || 'N/A'}
+              </p>
+            </div>
           </div>
-          <iframe src={getCalendlyUrl()} width="100%" height="600" />
         </div>
-      </section>
 
-      <div className="flex justify-between items-center pt-8">
+        <div className={`${cardClassName} p-6`}>
+          <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
+            Project Preferences
+          </p>
+          <div className="mt-4 grid sm:grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-gray-400">Goals</p>
+              <p className="whitespace-pre-wrap wrap-break-word">
+                {data.goals || 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-400">Audience</p>
+              <p className="whitespace-pre-wrap wrap-break-word">
+                {data.targetAudience || 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-400">Budget</p>
+              <p>{data.budget || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-gray-400">Timeline</p>
+              <p>{data.timeline || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-gray-400">Brand Guidelines</p>
+              <p className="whitespace-pre-wrap wrap-break-word">
+                {data.brandGuidelines || 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-400">Competitors</p>
+              <p className="whitespace-pre-wrap wrap-break-word">
+                {data.competitors || 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-400">Success Metrics</p>
+              <p className="whitespace-pre-wrap wrap-break-word">
+                {data.successMetrics || 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-400">Notes</p>
+              <p className="whitespace-pre-wrap wrap-break-word">
+                {data.notes || 'N/A'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className={`${cardClassName} p-6`}>
+          <p className="text-xs uppercase tracking-[0.2em] text-gray-500">
+            Service Requirements
+          </p>
+          <div className="mt-4 text-sm space-y-3">
+            <div>
+              <p className="text-gray-400">Service</p>
+              <p>{serviceLabel || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-gray-400">Details</p>
+              <p className="whitespace-pre-wrap wrap-break-word">
+                {serviceDetails || 'N/A'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center pt-2">
         <button
           type="button"
           onClick={onBack}
@@ -956,7 +1118,7 @@ const AssetsAndBooking = ({
           {isLoading ? (
             <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
           ) : (
-            'Complete Onboarding'
+            'Submit Intake'
           )}
         </button>
       </div>
@@ -988,6 +1150,7 @@ const ClientIntake = () => {
     email: '',
     phone: '',
     company_website: '',
+    address: '',
     industry: '',
     business_details: {
       problem_solving: '',
@@ -995,14 +1158,61 @@ const ClientIntake = () => {
       launch_date: '',
       biggest_concern: '',
     },
+    goals: '',
+    budget: '',
+    timeline: '',
+    targetAudience: '',
+    brandGuidelines: '',
+    competitors: '',
+    successMetrics: '',
+    notes: '',
     service_responses: {},
     uploaded_files: [],
     calendly_event_id: '',
   });
 
+  const isRequirementsComplete = () => {
+    const responses = formData.service_responses || {};
+    if (formData.service_type === 'website_build') {
+      return (
+        Boolean(responses.has_site) &&
+        (responses.features || []).length > 0 &&
+        Boolean(responses.style)
+      );
+    }
+    if (formData.service_type === 'ai_receptionist') {
+      return (
+        Boolean(responses.daily_calls) &&
+        Boolean(responses.frustration) &&
+        (responses.data_points || []).length > 0 &&
+        Boolean(responses.forward_phone)
+      );
+    }
+    if (formData.service_type === 'ai_automation') {
+      return (
+        Boolean(responses.tasks) &&
+        Boolean(responses.tools) &&
+        Boolean(responses.volume) &&
+        Boolean(responses.workflow)
+      );
+    }
+    if (formData.service_type === 'software_build') {
+      return (
+        Boolean(responses.sw_type) &&
+        Boolean(responses.problem) &&
+        Boolean(responses.sw_features)
+      );
+    }
+    return false;
+  };
+
   const handleNext = () => {
     if (step === 1 && !formData.service_type) {
       toast.error('Please choose a service to continue.');
+      return;
+    }
+    if (step === 3 && !isRequirementsComplete()) {
+      toast.error('Please complete the service requirements to continue.');
       return;
     }
     setStep((prev) => Math.min(prev + 1, 4));
@@ -1164,9 +1374,8 @@ const ClientIntake = () => {
           )}
 
           {step === 4 && (
-            <AssetsAndBooking
-              files={formData.uploaded_files}
-              updateFiles={(files) => updateFormData({ uploaded_files: files })}
+            <SummaryStep
+              data={formData}
               onBack={handleBack}
               onSubmit={handleSubmit}
               isLoading={isPending}
