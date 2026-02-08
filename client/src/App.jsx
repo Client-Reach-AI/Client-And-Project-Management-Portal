@@ -55,6 +55,7 @@ const App = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/accept-invite" element={<AcceptInvite />} />
         <Route path="/client-intake" element={<ClientIntake />} />
+        <Route path="/intake" element={<ClientIntake />} />
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="team" element={<Team />} />

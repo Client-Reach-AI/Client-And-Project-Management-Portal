@@ -10,8 +10,8 @@ import { isWorkspaceAdmin } from '../lib/permissions.js';
 const router = Router();
 
 const buildIntakeLink = (token) => {
-  const baseUrl = process.env.APP_BASE_URL || 'http://localhost:5173';
-  return `${baseUrl}/client-intake?token=${token}`;
+  const baseUrl = process.env.ONBOARDING_PORTAL_URL || 'http://localhost:3000';
+  return `${baseUrl}/intake?token=${token}`;
 };
 
 router.get('/lookup', async (req, res, next) => {
@@ -81,20 +81,43 @@ router.post('/submit', async (req, res, next) => {
 
     if (!clientId) {
       const newClientId = generateId('client');
-      const name = payload?.clientName || payload?.company || 'Client';
+      const name =
+        payload?.contact_name ||
+        payload?.clientName ||
+        payload?.company_name ||
+        payload?.company ||
+        'Client';
+      const website =
+        payload?.company_website ||
+        payload?.website ||
+        payload?.service_responses?.current_url ||
+        null;
 
       await db.insert(clients).values({
         id: newClientId,
         workspaceId: intake.workspaceId,
         name,
-        company: payload?.company || null,
+        company: payload?.company_name || payload?.company || null,
+        contactName: payload?.contact_name || null,
+        contactRole: payload?.contact_role || null,
         email: payload?.email || null,
         phone: payload?.phone || null,
-        website: payload?.website || null,
+        website,
         industry: payload?.industry || null,
+        serviceType: payload?.service_type || null,
+        businessDetails: payload?.business_details || {},
+        serviceResponses: payload?.service_responses || {},
+        uploadedFiles: payload?.uploaded_files || [],
+        calendlyEventId: payload?.calendly_event_id || null,
         details: {
           source: 'INTAKE',
           intakeId: intake.id,
+          serviceType: payload?.service_type || null,
+          contactRole: payload?.contact_role || null,
+          businessDetails: payload?.business_details || null,
+          serviceResponses: payload?.service_responses || null,
+          uploadedFiles: payload?.uploaded_files || null,
+          calendlyEventId: payload?.calendly_event_id || null,
           projectName: payload?.projectName || null,
           goals: payload?.goals || null,
           budget: payload?.budget || null,
@@ -114,6 +137,15 @@ router.post('/submit', async (req, res, next) => {
     await db
       .update(clientIntakes)
       .set({
+        serviceType: payload?.service_type || null,
+        companyName: payload?.company_name || null,
+        contactName: payload?.contact_name || null,
+        contactRole: payload?.contact_role || null,
+        industry: payload?.industry || null,
+        businessDetails: payload?.business_details || {},
+        serviceResponses: payload?.service_responses || {},
+        uploadedFiles: payload?.uploaded_files || [],
+        calendlyEventId: payload?.calendly_event_id || null,
         payload: payload || {},
         status: 'SUBMITTED',
         submittedAt: new Date(),

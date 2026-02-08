@@ -283,14 +283,67 @@ const run = async () => {
       workspaceId: 'org_core',
       name: 'OrbitAI',
       company: 'OrbitAI',
+      contactName: 'Isabella Grant',
+      contactRole: 'Operations Lead',
       email: 'hello@orbitai.io',
       phone: '+1 312 555 2204',
       website: 'https://orbitai.io',
       industry: 'AI SaaS',
+      serviceType: 'ai_automation',
+      businessDetails: {
+        problem_solving:
+          'Manual onboarding is slow and inconsistent across teams.',
+        success_90_days:
+          'Automate 60% of onboarding tasks and cut setup time by 25%.',
+        launch_date: '2026-04-15',
+        biggest_concern: 'Data accuracy during workflow automation.',
+      },
+      serviceResponses: {
+        tasks: 'Provisioning accounts, syncing data, and notifying teams.',
+        tools: 'HubSpot, Slack, Airtable',
+        volume: '100-500',
+        workflow:
+          'Automated handoffs from sales to onboarding with status updates.',
+      },
+      uploadedFiles: [
+        {
+          name: 'onboarding-process.pdf',
+          size: 410240,
+          type: 'application/pdf',
+          url: '#',
+        },
+      ],
+      calendlyEventId: 'cal_evt_orbitai',
       status: 'ACTIVE',
       details: {
         source: 'INTAKE',
         intakeId: 'intake_orbitai',
+        serviceType: 'ai_automation',
+        contactRole: 'Operations Lead',
+        businessDetails: {
+          problem_solving:
+            'Manual onboarding is slow and inconsistent across teams.',
+          success_90_days:
+            'Automate 60% of onboarding tasks and cut setup time by 25%.',
+          launch_date: '2026-04-15',
+          biggest_concern: 'Data accuracy during workflow automation.',
+        },
+        serviceResponses: {
+          tasks: 'Provisioning accounts, syncing data, and notifying teams.',
+          tools: 'HubSpot, Slack, Airtable',
+          volume: '100-500',
+          workflow:
+            'Automated handoffs from sales to onboarding with status updates.',
+        },
+        uploadedFiles: [
+          {
+            name: 'onboarding-process.pdf',
+            size: 410240,
+            type: 'application/pdf',
+            url: '#',
+          },
+        ],
+        calendlyEventId: 'cal_evt_orbitai',
         goals: 'New onboarding workflow automation',
         budget: '$28k',
         timeline: '6 weeks',
@@ -335,22 +388,65 @@ const run = async () => {
       clientId: 'client_orbitai',
       token: 'token_orbitai',
       status: 'SUBMITTED',
+      serviceType: 'ai_automation',
+      companyName: 'OrbitAI',
+      contactName: 'Isabella Grant',
+      contactRole: 'Operations Lead',
+      industry: 'AI SaaS',
+      businessDetails: {
+        problem_solving:
+          'Manual onboarding is slow and inconsistent across teams.',
+        success_90_days:
+          'Automate 60% of onboarding tasks and cut setup time by 25%.',
+        launch_date: '2026-04-15',
+        biggest_concern: 'Data accuracy during workflow automation.',
+      },
+      serviceResponses: {
+        tasks: 'Provisioning accounts, syncing data, and notifying teams.',
+        tools: 'HubSpot, Slack, Airtable',
+        volume: '100-500',
+        workflow:
+          'Automated handoffs from sales to onboarding with status updates.',
+      },
+      uploadedFiles: [
+        {
+          name: 'onboarding-process.pdf',
+          size: 410240,
+          type: 'application/pdf',
+          url: '#',
+        },
+      ],
+      calendlyEventId: 'cal_evt_orbitai',
       payload: {
-        clientName: 'OrbitAI',
-        company: 'OrbitAI',
-        email: 'hello@orbitai.io',
-        phone: '+1 312 555 2204',
-        website: 'https://orbitai.io',
+        service_type: 'ai_automation',
+        company_name: 'OrbitAI',
+        contact_name: 'Isabella Grant',
+        contact_role: 'Operations Lead',
         industry: 'AI SaaS',
-        projectName: 'Onboarding Automation',
-        goals: 'Reduce onboarding time and manual setup',
-        budget: '$28k',
-        timeline: '6 weeks',
-        targetAudience: 'Ops leaders',
-        brandGuidelines: 'Clean, data-first',
-        competitors: 'FlowOps',
-        successMetrics: 'Reduce onboarding time by 25%',
-        notes: 'Integrate with Zapier.',
+        business_details: {
+          problem_solving:
+            'Manual onboarding is slow and inconsistent across teams.',
+          success_90_days:
+            'Automate 60% of onboarding tasks and cut setup time by 25%.',
+          launch_date: '2026-04-15',
+          biggest_concern: 'Data accuracy during workflow automation.',
+        },
+        service_responses: {
+          tasks: 'Provisioning accounts, syncing data, and notifying teams.',
+          tools: 'HubSpot, Slack, Airtable',
+          volume: '100-500',
+          workflow:
+            'Automated handoffs from sales to onboarding with status updates.',
+        },
+        uploaded_files: [
+          {
+            name: 'onboarding-process.pdf',
+            size: 410240,
+            type: 'application/pdf',
+            url: '#',
+          },
+        ],
+        calendly_event_id: 'cal_evt_orbitai',
       },
       expiresAt: daysAgo(-10),
       submittedAt: daysAgo(2),

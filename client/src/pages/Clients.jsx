@@ -26,6 +26,80 @@ const initialClientForm = {
   notes: '',
 };
 
+const getIntakeDisplayName = (payload = {}) =>
+  payload.contact_name ||
+  payload.clientName ||
+  payload.company_name ||
+  payload.company ||
+  'Client Submission';
+
+const getServiceLabel = (serviceType) => {
+  switch (serviceType) {
+    case 'website_build':
+      return 'Website Build';
+    case 'ai_receptionist':
+      return 'AI Receptionist';
+    case 'ai_automation':
+      return 'AI Automation';
+    case 'software_build':
+      return 'Software Build';
+    default:
+      return 'Service';
+  }
+};
+
+const buildServiceSummary = (payload = {}) => {
+  const serviceType = payload.service_type;
+  const responses = payload.service_responses || {};
+
+  if (serviceType === 'website_build') {
+    const features = (responses.features || []).join(', ');
+    return [
+      responses.has_site && `Has site: ${responses.has_site}`,
+      responses.current_url && `Current URL: ${responses.current_url}`,
+      features && `Features: ${features}`,
+      responses.style && `Style: ${responses.style}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+  }
+
+  if (serviceType === 'ai_receptionist') {
+    const dataPoints = (responses.data_points || []).join(', ');
+    return [
+      responses.daily_calls && `Daily calls: ${responses.daily_calls}`,
+      responses.frustration && `Frustration: ${responses.frustration}`,
+      dataPoints && `Info to collect: ${dataPoints}`,
+      responses.forward_phone && `Forward phone: ${responses.forward_phone}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+  }
+
+  if (serviceType === 'ai_automation') {
+    return [
+      responses.tasks && `Tasks: ${responses.tasks}`,
+      responses.tools && `Tools: ${responses.tools}`,
+      responses.volume && `Volume: ${responses.volume}`,
+      responses.workflow && `Workflow: ${responses.workflow}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+  }
+
+  if (serviceType === 'software_build') {
+    return [
+      responses.sw_type && `Type: ${responses.sw_type}`,
+      responses.problem && `Problem: ${responses.problem}`,
+      responses.sw_features && `Features: ${responses.sw_features}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+  }
+
+  return '';
+};
+
 const Clients = () => {
   const { currentWorkspace, searchQuery } = useWorkspaceContext();
   const user = useSelector((state) => state.auth.user);
@@ -159,15 +233,29 @@ const Clients = () => {
         const payload = intake.payload || {};
         const created = await createClient({
           workspaceId: currentWorkspace.id,
-          name: payload.clientName || payload.company || 'Client',
-          company: payload.company,
+          name:
+            payload.contact_name ||
+            payload.clientName ||
+            payload.company_name ||
+            payload.company ||
+            'Client',
+          company: payload.company_name || payload.company,
           email: payload.email,
           phone: payload.phone,
-          website: payload.website,
+          website:
+            payload.company_website ||
+            payload.website ||
+            payload.service_responses?.current_url,
           industry: payload.industry,
           details: {
             source: 'INTAKE',
             intakeId: intake.id,
+            serviceType: payload.service_type || null,
+            contactRole: payload.contact_role || null,
+            businessDetails: payload.business_details || null,
+            serviceResponses: payload.service_responses || null,
+            uploadedFiles: payload.uploaded_files || null,
+            calendlyEventId: payload.calendly_event_id || null,
             projectName: payload.projectName || null,
             goals: payload.goals || null,
             budget: payload.budget || null,
@@ -183,7 +271,8 @@ const Clients = () => {
         setSelectedIntake({
           ...intake,
           clientId: created?.id || null,
-          clientName: created?.name || payload.clientName,
+          clientName:
+            created?.name || payload.contact_name || payload.clientName,
         });
       } catch (error) {
         toast.error(error?.message || 'Failed to attach client');
@@ -209,8 +298,20 @@ const Clients = () => {
     setSortBy('name-asc');
   };
 
-  const buildProjectDescription = (payload) => {
+  const buildProjectDescription = (payload = {}) => {
+    const business = payload.business_details || {};
+    const serviceSummary = buildServiceSummary(payload);
+
     const sections = [
+      payload.service_type &&
+        `Service: ${getServiceLabel(payload.service_type)}`,
+      payload.industry && `Industry: ${payload.industry}`,
+      business.problem_solving && `Problem: ${business.problem_solving}`,
+      business.success_90_days && `90-Day Success: ${business.success_90_days}`,
+      business.launch_date && `Launch Date: ${business.launch_date}`,
+      business.biggest_concern &&
+        `Biggest Concern: ${business.biggest_concern}`,
+      serviceSummary && `Service Details:\n${serviceSummary}`,
       payload.goals && `Goals: ${payload.goals}`,
       payload.targetAudience && `Audience: ${payload.targetAudience}`,
       payload.budget && `Budget: ${payload.budget}`,
@@ -594,7 +695,7 @@ const Clients = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-semibold text-zinc-900 dark:text-white">
-                      {intake.payload?.clientName || 'Client Submission'}
+                      {getIntakeDisplayName(intake.payload)}
                     </p>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400">
                       Submitted on{' '}
@@ -621,14 +722,20 @@ const Clients = () => {
                   </div>
                 </div>
                 <div className="mt-3 text-xs text-zinc-600 dark:text-zinc-400 space-y-1">
-                  {intake.payload?.goals && (
-                    <div>Goals: {intake.payload.goals}</div>
+                  {intake.payload?.service_type && (
+                    <div>
+                      Service: {getServiceLabel(intake.payload.service_type)}
+                    </div>
                   )}
-                  {intake.payload?.timeline && (
-                    <div>Timeline: {intake.payload.timeline}</div>
+                  {intake.payload?.business_details?.launch_date && (
+                    <div>
+                      Launch Date: {intake.payload.business_details.launch_date}
+                    </div>
                   )}
-                  {intake.payload?.budget && (
-                    <div>Budget: {intake.payload.budget}</div>
+                  {intake.payload?.business_details?.problem_solving && (
+                    <div>
+                      Problem: {intake.payload.business_details.problem_solving}
+                    </div>
                   )}
                 </div>
               </div>
@@ -642,14 +749,20 @@ const Clients = () => {
           isDialogOpen={showProjectDialog}
           setIsDialogOpen={setShowProjectDialog}
           initialData={{
-            name: intakePayload.projectName || intakePayload.clientName || '',
+            name:
+              intakePayload.projectName ||
+              intakePayload.contact_name ||
+              intakePayload.clientName ||
+              '',
             description: buildProjectDescription(intakePayload),
             status: 'PLANNING',
             priority: 'MEDIUM',
             clientId: selectedIntake?.clientId || null,
             clientName:
+              intakePayload.contact_name ||
               intakePayload.clientName ||
               selectedIntake?.clientName ||
+              intakePayload.company_name ||
               intakePayload.company ||
               'Client',
           }}
@@ -665,7 +778,7 @@ const Clients = () => {
                   Intake Details
                 </h3>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {selectedDetails.payload?.clientName || 'Client Submission'}
+                  {getIntakeDisplayName(selectedDetails.payload)}
                 </p>
               </div>
               <button
@@ -682,44 +795,83 @@ const Clients = () => {
                 <p className="font-medium text-zinc-900 dark:text-zinc-100">
                   Contact
                 </p>
-                <p>Name: {selectedDetails.payload?.clientName || 'N/A'}</p>
-                <p>Company: {selectedDetails.payload?.company || 'N/A'}</p>
+                <p>
+                  Name:{' '}
+                  {selectedDetails.payload?.contact_name ||
+                    selectedDetails.payload?.clientName ||
+                    'N/A'}
+                </p>
+                <p>
+                  Company:{' '}
+                  {selectedDetails.payload?.company_name ||
+                    selectedDetails.payload?.company ||
+                    'N/A'}
+                </p>
+                <p>Role: {selectedDetails.payload?.contact_role || 'N/A'}</p>
                 <p>Email: {selectedDetails.payload?.email || 'N/A'}</p>
                 <p>Phone: {selectedDetails.payload?.phone || 'N/A'}</p>
-                <p>Website: {selectedDetails.payload?.website || 'N/A'}</p>
+                <p>
+                  Website:{' '}
+                  {selectedDetails.payload?.company_website ||
+                    selectedDetails.payload?.website ||
+                    selectedDetails.payload?.service_responses?.current_url ||
+                    'N/A'}
+                </p>
+                <p>Industry: {selectedDetails.payload?.industry || 'N/A'}</p>
               </div>
               <div>
                 <p className="font-medium text-zinc-900 dark:text-zinc-100">
-                  Project Vision
+                  Business Details
                 </p>
-                <p>Goals: {selectedDetails.payload?.goals || 'N/A'}</p>
                 <p>
-                  Audience: {selectedDetails.payload?.targetAudience || 'N/A'}
+                  Problem:{' '}
+                  {selectedDetails.payload?.business_details?.problem_solving ||
+                    'N/A'}
                 </p>
-                <p>Budget: {selectedDetails.payload?.budget || 'N/A'}</p>
-                <p>Timeline: {selectedDetails.payload?.timeline || 'N/A'}</p>
+                <p>
+                  90-Day Success:{' '}
+                  {selectedDetails.payload?.business_details?.success_90_days ||
+                    'N/A'}
+                </p>
+                <p>
+                  Launch Date:{' '}
+                  {selectedDetails.payload?.business_details?.launch_date ||
+                    'N/A'}
+                </p>
+                <p>
+                  Biggest Concern:{' '}
+                  {selectedDetails.payload?.business_details?.biggest_concern ||
+                    'N/A'}
+                </p>
               </div>
               <div>
                 <p className="font-medium text-zinc-900 dark:text-zinc-100">
-                  Brand & Competition
+                  Service Requirements
                 </p>
                 <p>
-                  Brand Guidelines:{' '}
-                  {selectedDetails.payload?.brandGuidelines || 'N/A'}
+                  Service:{' '}
+                  {selectedDetails.payload?.service_type
+                    ? getServiceLabel(selectedDetails.payload.service_type)
+                    : 'N/A'}
                 </p>
                 <p>
-                  Competitors: {selectedDetails.payload?.competitors || 'N/A'}
-                </p>
-                <p>
-                  Success Metrics:{' '}
-                  {selectedDetails.payload?.successMetrics || 'N/A'}
+                  Details:{' '}
+                  <span className="whitespace-pre-line">
+                    {buildServiceSummary(selectedDetails.payload) || 'N/A'}
+                  </span>
                 </p>
               </div>
               <div>
                 <p className="font-medium text-zinc-900 dark:text-zinc-100">
-                  Notes
+                  Assets & Booking
                 </p>
-                <p>{selectedDetails.payload?.notes || 'N/A'}</p>
+                <p>
+                  Files: {selectedDetails.payload?.uploaded_files?.length || 0}
+                </p>
+                <p>
+                  Calendly Event:{' '}
+                  {selectedDetails.payload?.calendly_event_id || 'N/A'}
+                </p>
               </div>
             </div>
 
@@ -778,7 +930,15 @@ const Clients = () => {
                 </p>
                 <p>
                   Primary Contact:{' '}
-                  {selectedClient.details?.contactName || 'N/A'}
+                  {selectedClient.contactName ||
+                    selectedClient.details?.contactName ||
+                    'N/A'}
+                </p>
+                <p>
+                  Contact Role:{' '}
+                  {selectedClient.contactRole ||
+                    selectedClient.details?.contactRole ||
+                    'N/A'}
                 </p>
                 <p>Address: {selectedClient.details?.address || 'N/A'}</p>
                 <p>Goals: {selectedClient.details?.goals || 'N/A'}</p>
@@ -790,7 +950,57 @@ const Clients = () => {
               </div>
               <div>
                 <p className="font-medium text-zinc-900 dark:text-zinc-100">
-                  Brand & Competition
+                  Service Intake
+                </p>
+                <p>
+                  Service:{' '}
+                  {selectedClient.serviceType ||
+                  selectedClient.details?.serviceType
+                    ? getServiceLabel(
+                        selectedClient.serviceType ||
+                          selectedClient.details?.serviceType
+                      )
+                    : 'N/A'}
+                </p>
+                <p>
+                  Contact Role: {selectedClient.details?.contactRole || 'N/A'}
+                </p>
+                <p>
+                  Problem:{' '}
+                  {selectedClient.businessDetails?.problem_solving ||
+                    selectedClient.details?.businessDetails?.problem_solving ||
+                    'N/A'}
+                </p>
+                <p>
+                  90-Day Success:{' '}
+                  {selectedClient.businessDetails?.success_90_days ||
+                    selectedClient.details?.businessDetails?.success_90_days ||
+                    'N/A'}
+                </p>
+                <p>
+                  Launch Date:{' '}
+                  {selectedClient.businessDetails?.launch_date ||
+                    selectedClient.details?.businessDetails?.launch_date ||
+                    'N/A'}
+                </p>
+                <p>
+                  Biggest Concern:{' '}
+                  {selectedClient.businessDetails?.biggest_concern ||
+                    selectedClient.details?.businessDetails?.biggest_concern ||
+                    'N/A'}
+                </p>
+                <p>
+                  Service Details:{' '}
+                  <span className="whitespace-pre-line">
+                    {buildServiceSummary({
+                      service_type:
+                        selectedClient.serviceType ||
+                        selectedClient.details?.serviceType,
+                      service_responses:
+                        selectedClient.serviceResponses ||
+                        selectedClient.details?.serviceResponses,
+                    }) || 'N/A'}
+                  </span>
                 </p>
                 <p>
                   Brand Guidelines:{' '}
@@ -809,6 +1019,12 @@ const Clients = () => {
                   Notes
                 </p>
                 <p>{selectedClient.details?.notes || 'N/A'}</p>
+                <p>
+                  Uploaded Files:{' '}
+                  {selectedClient.uploadedFiles?.length ||
+                    selectedClient.details?.uploadedFiles?.length ||
+                    0}
+                </p>
               </div>
             </div>
           </div>
