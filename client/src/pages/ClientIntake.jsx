@@ -84,7 +84,7 @@ const ClientIntake = () => {
   const progress = Math.round((currentStep / (steps.length - 1)) * 100);
 
   const inputClassName =
-    'w-full mt-2 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 dark:bg-slate-950 text-base sm:text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500';
+    'w-full mt-2 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 dark:bg-slate-950 text-base sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500';
   const textAreaClassName = `${inputClassName} min-h-[6.5rem]`;
 
   const requiredByStep = {
@@ -134,7 +134,7 @@ const ClientIntake = () => {
           <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
             Invalid intake link
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+          <p className="text-sm text-slate-600 dark:text-slate-300 mt-2">
             Please request a new intake link from your workspace admin.
           </p>
         </div>
@@ -145,7 +145,7 @@ const ClientIntake = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 text-sm text-slate-500 dark:text-slate-400 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 text-sm text-slate-600 dark:text-slate-300 shadow-sm">
           Loading intake form...
         </div>
       </div>
@@ -159,7 +159,7 @@ const ClientIntake = () => {
           <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
             Intake form unavailable
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+          <p className="text-sm text-slate-600 dark:text-slate-300 mt-2">
             This link may have expired. Please request a fresh intake link.
           </p>
         </div>
@@ -177,7 +177,7 @@ const ClientIntake = () => {
           <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
             Thank you for the details!
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+          <p className="text-sm text-slate-600 dark:text-slate-300 mt-2">
             Your onboarding information was sent successfully. Our team will
             review it and follow up shortly.
           </p>
@@ -192,7 +192,7 @@ const ClientIntake = () => {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 overflow-x-hidden">
       <div className="max-w-6xl mx-auto px-4 py-8 sm:py-12">
         <div className="mb-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-600 dark:text-slate-300">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-200">
             Client onboarding
             <ChevronRight className="size-3" />
             Intake form
@@ -200,7 +200,7 @@ const ClientIntake = () => {
           <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900 dark:text-slate-100 mt-3">
             Tell us about your project
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+          <p className="text-sm text-slate-600 dark:text-slate-300 mt-2">
             {intake.workspaceName
               ? `Workspace: ${intake.workspaceName}`
               : 'Share the details so we can align on goals and scope.'}
@@ -212,7 +212,7 @@ const ClientIntake = () => {
             <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  <p className="text-xs uppercase tracking-wide text-slate-600 dark:text-slate-300">
                     Progress
                   </p>
                   <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">
@@ -262,7 +262,7 @@ const ClientIntake = () => {
                         <span className="block text-sm font-medium text-slate-900 dark:text-slate-100">
                           {item.title}
                         </span>
-                        <span className="block text-xs text-slate-500 dark:text-slate-400">
+                        <span className="block text-xs text-slate-600 dark:text-slate-300">
                           {item.description}
                         </span>
                       </span>
@@ -272,7 +272,7 @@ const ClientIntake = () => {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-sm text-slate-600 dark:text-slate-400">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-sm text-slate-700 dark:text-slate-200">
               <p className="font-medium text-slate-900 dark:text-slate-100 mb-2">
                 Helpful tips
               </p>
@@ -291,7 +291,7 @@ const ClientIntake = () => {
                   <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                     Step {currentStep + 1} of {steps.length}
                   </p>
-                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
                     {progress}%
                   </p>
                 </div>
@@ -313,10 +313,10 @@ const ClientIntake = () => {
                       onClick={() => setCurrentStep(index)}
                       className={`shrink-0 px-3 py-2 rounded-full border text-xs font-medium transition-colors ${
                         isActive
-                          ? 'border-blue-500 text-blue-600 bg-blue-50 dark:bg-blue-500/10'
+                          ? 'border-blue-500 text-blue-700 bg-blue-50 dark:bg-blue-500/10'
                           : isComplete
-                            ? 'border-emerald-500/40 text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10'
-                            : 'border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400'
+                            ? 'border-emerald-500/40 text-emerald-700 bg-emerald-50 dark:bg-emerald-500/10'
+                            : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300'
                       }`}
                     >
                       {index + 1}. {item.title}
@@ -341,7 +341,9 @@ const ClientIntake = () => {
               {step.id === 'contact' && (
                 <div className="grid md:grid-cols-2 gap-5">
                   <div>
-                    <label className="text-sm">Your name</label>
+                    <label className="text-sm text-slate-700 dark:text-slate-200">
+                      Your name
+                    </label>
                     <input
                       value={formData.clientName}
                       onChange={(e) =>
@@ -356,7 +358,9 @@ const ClientIntake = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-sm">Company</label>
+                    <label className="text-sm text-slate-700 dark:text-slate-200">
+                      Company
+                    </label>
                     <input
                       value={formData.company}
                       onChange={(e) =>
@@ -370,7 +374,9 @@ const ClientIntake = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-sm">Email</label>
+                    <label className="text-sm text-slate-700 dark:text-slate-200">
+                      Email
+                    </label>
                     <input
                       type="email"
                       value={formData.email}
@@ -385,7 +391,9 @@ const ClientIntake = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-sm">Phone</label>
+                    <label className="text-sm text-slate-700 dark:text-slate-200">
+                      Phone
+                    </label>
                     <input
                       value={formData.phone}
                       onChange={(e) =>
@@ -404,7 +412,9 @@ const ClientIntake = () => {
               {step.id === 'business' && (
                 <div className="grid md:grid-cols-2 gap-5">
                   <div>
-                    <label className="text-sm">Website</label>
+                    <label className="text-sm text-slate-700 dark:text-slate-200">
+                      Website
+                    </label>
                     <input
                       value={formData.website}
                       onChange={(e) =>
@@ -418,7 +428,9 @@ const ClientIntake = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-sm">Industry</label>
+                    <label className="text-sm text-slate-700 dark:text-slate-200">
+                      Industry
+                    </label>
                     <input
                       value={formData.industry}
                       onChange={(e) =>
@@ -432,7 +444,9 @@ const ClientIntake = () => {
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="text-sm">Project name</label>
+                    <label className="text-sm text-slate-700 dark:text-slate-200">
+                      Project name
+                    </label>
                     <input
                       value={formData.projectName}
                       onChange={(e) =>
@@ -451,7 +465,9 @@ const ClientIntake = () => {
               {step.id === 'vision' && (
                 <div className="grid md:grid-cols-2 gap-5">
                   <div className="md:col-span-2">
-                    <label className="text-sm">Goals & vision</label>
+                    <label className="text-sm text-slate-700 dark:text-slate-200">
+                      Goals & vision
+                    </label>
                     <textarea
                       value={formData.goals}
                       onChange={(e) =>
@@ -466,7 +482,9 @@ const ClientIntake = () => {
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="text-sm">Target audience</label>
+                    <label className="text-sm text-slate-700 dark:text-slate-200">
+                      Target audience
+                    </label>
                     <textarea
                       value={formData.targetAudience}
                       onChange={(e) =>
@@ -485,7 +503,9 @@ const ClientIntake = () => {
               {step.id === 'scope' && (
                 <div className="grid md:grid-cols-2 gap-5">
                   <div>
-                    <label className="text-sm">Budget range</label>
+                    <label className="text-sm text-slate-700 dark:text-slate-200">
+                      Budget range
+                    </label>
                     <input
                       value={formData.budget}
                       onChange={(e) =>
@@ -499,7 +519,9 @@ const ClientIntake = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-sm">Desired timeline</label>
+                    <label className="text-sm text-slate-700 dark:text-slate-200">
+                      Desired timeline
+                    </label>
                     <input
                       value={formData.timeline}
                       onChange={(e) =>
@@ -518,7 +540,9 @@ const ClientIntake = () => {
               {step.id === 'brand' && (
                 <div className="grid md:grid-cols-2 gap-5">
                   <div>
-                    <label className="text-sm">Brand guidelines</label>
+                    <label className="text-sm text-slate-700 dark:text-slate-200">
+                      Brand guidelines
+                    </label>
                     <textarea
                       value={formData.brandGuidelines}
                       onChange={(e) =>
@@ -532,7 +556,9 @@ const ClientIntake = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-sm">Competitors</label>
+                    <label className="text-sm text-slate-700 dark:text-slate-200">
+                      Competitors
+                    </label>
                     <textarea
                       value={formData.competitors}
                       onChange={(e) =>
@@ -551,7 +577,9 @@ const ClientIntake = () => {
               {step.id === 'success' && (
                 <div className="grid md:grid-cols-2 gap-5">
                   <div>
-                    <label className="text-sm">Success metrics</label>
+                    <label className="text-sm text-slate-700 dark:text-slate-200">
+                      Success metrics
+                    </label>
                     <textarea
                       value={formData.successMetrics}
                       onChange={(e) =>
@@ -565,7 +593,9 @@ const ClientIntake = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-sm">Additional notes</label>
+                    <label className="text-sm text-slate-700 dark:text-slate-200">
+                      Additional notes
+                    </label>
                     <textarea
                       value={formData.notes}
                       onChange={(e) =>
