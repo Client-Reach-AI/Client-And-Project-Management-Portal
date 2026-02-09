@@ -1,19 +1,9 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  ArrowLeftIcon,
-  PlusIcon,
-  SettingsIcon,
-  BarChart3Icon,
-  CalendarIcon,
-  FileStackIcon,
-  ZapIcon,
-} from 'lucide-react';
-import ProjectAnalytics from '../components/ProjectAnalytics';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowLeftIcon, PlusIcon, ZapIcon } from 'lucide-react';
 import ProjectSettings from '../components/ProjectSettings';
 import CreateTaskDialog from '../components/CreateTaskDialog';
-import ProjectCalendar from '../components/ProjectCalendar';
 import ProjectTasks from '../components/ProjectTasks';
 import { useWorkspaceContext } from '../context/workspaceContext';
 import { useProject } from '../hooks/useQueries';
@@ -29,7 +19,6 @@ export default function ProjectDetail() {
 
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [showClientDetails, setShowClientDetails] = useState(false);
-  const [activeTab, setActiveTab] = useState(tab || 'tasks');
   const { data: project, isLoading } = useProject(id, {
     enabled: Boolean(id),
   });
@@ -39,21 +28,20 @@ export default function ProjectDetail() {
     )?.role;
     return user?.role === 'ADMIN' || role === 'ADMIN';
   }, [currentWorkspace, user]);
+  const isClient = user?.role === 'CLIENT';
+
+  const activeTab = tab === 'settings' && isAdmin ? 'settings' : 'tasks';
 
   const tasks = project?.tasks || [];
-  const intakePayload = project?.clientIntake?.payload || null;
-  const clientDetails = project?.client?.details || null;
   const isTeamLead = project?.team_lead === user?.id;
   const canViewClientDetails = isTeamLead || isAdmin;
 
   useEffect(() => {
     if (!tab) return;
-    if (tab === 'settings' && !isAdmin) {
-      setActiveTab('tasks');
+    const allowedTabs = isAdmin ? ['tasks', 'settings'] : ['tasks'];
+    if (!allowedTabs.includes(tab)) {
       setSearchParams({ id: id, tab: 'tasks' });
-      return;
     }
-    setActiveTab(tab);
   }, [tab, isAdmin, id, setSearchParams]);
 
   const canManageTasks = isAdmin || project?.team_lead === user?.id;
@@ -67,6 +55,9 @@ export default function ProjectDetail() {
     COMPLETED: 'bg-blue-200 text-blue-900 dark:bg-blue-500 dark:text-blue-900',
     CANCELLED: 'bg-red-200 text-red-900 dark:bg-red-500 dark:text-red-900',
   };
+
+  const formatDate = (value) =>
+    value ? new Date(value).toLocaleDateString() : 'N/A';
 
   if (isLoading) {
     return (
@@ -127,6 +118,12 @@ export default function ProjectDetail() {
             </button>
           </div>
         )}
+        {isClient && (project.start_date || project.end_date) && (
+          <div className="text-xs text-zinc-500 dark:text-zinc-400">
+            Timeline: {formatDate(project.start_date)} -{' '}
+            {formatDate(project.end_date)}
+          </div>
+        )}
         {canManageTasks && (
           <button
             onClick={() => setShowCreateTask(true)}
@@ -181,112 +178,21 @@ export default function ProjectDetail() {
         ))}
       </div>
 
-      {intakePayload && canViewClientDetails && (
-        <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h2 className="text-base font-semibold">Client Intake</h2>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Submitted{' '}
-                {project.clientIntake?.submittedAt
-                  ? new Date(
-                      project.clientIntake.submittedAt
-                    ).toLocaleDateString()
-                  : 'N/A'}
-              </p>
-            </div>
+      <div className="mt-6">
+        {activeTab === 'tasks' && (
+          <div className=" dark:bg-zinc-900/40 rounded max-w-6xl">
+            <ProjectTasks
+              tasks={tasks}
+              isAdmin={isAdmin}
+              isTeamLead={isTeamLead}
+            />
           </div>
-          <div className="mt-4 grid md:grid-cols-2 gap-4 text-sm text-zinc-600 dark:text-zinc-300">
-            <div className="space-y-1">
-              <p className="font-medium text-zinc-900 dark:text-zinc-100">
-                Contact
-              </p>
-              <p>Name: {intakePayload.clientName || 'N/A'}</p>
-              <p>Company: {intakePayload.company || 'N/A'}</p>
-              <p>Email: {intakePayload.email || 'N/A'}</p>
-              <p>Phone: {intakePayload.phone || 'N/A'}</p>
-              <p>Website: {intakePayload.website || 'N/A'}</p>
-              <p>Industry: {intakePayload.industry || 'N/A'}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="font-medium text-zinc-900 dark:text-zinc-100">
-                Project Scope
-              </p>
-              <p>Project Name: {intakePayload.projectName || 'N/A'}</p>
-              <p>Goals: {intakePayload.goals || 'N/A'}</p>
-              <p>Audience: {intakePayload.targetAudience || 'N/A'}</p>
-              <p>Budget: {intakePayload.budget || 'N/A'}</p>
-              <p>Timeline: {intakePayload.timeline || 'N/A'}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="font-medium text-zinc-900 dark:text-zinc-100">
-                Brand & Competition
-              </p>
-              <p>Brand Guidelines: {intakePayload.brandGuidelines || 'N/A'}</p>
-              <p>Competitors: {intakePayload.competitors || 'N/A'}</p>
-              <p>Success Metrics: {intakePayload.successMetrics || 'N/A'}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="font-medium text-zinc-900 dark:text-zinc-100">
-                Notes
-              </p>
-              <p>{intakePayload.notes || 'N/A'}</p>
-            </div>
+        )}
+        {activeTab === 'settings' && (
+          <div className=" dark:bg-zinc-900/40 rounded max-w-6xl">
+            <ProjectSettings project={project} />
           </div>
-        </div>
-      )}
-
-      {/* Tabs */}
-      <div>
-        <div className="inline-flex flex-wrap max-sm:grid grid-cols-3 gap-2 border border-zinc-200 dark:border-zinc-800 rounded overflow-hidden">
-          {[
-            { key: 'tasks', label: 'Tasks', icon: FileStackIcon },
-            { key: 'calendar', label: 'Calendar', icon: CalendarIcon },
-            { key: 'analytics', label: 'Analytics', icon: BarChart3Icon },
-            ...(isAdmin
-              ? [{ key: 'settings', label: 'Settings', icon: SettingsIcon }]
-              : []),
-          ].map((tabItem) => (
-            <button
-              key={tabItem.key}
-              onClick={() => {
-                setActiveTab(tabItem.key);
-                setSearchParams({ id: id, tab: tabItem.key });
-              }}
-              className={`flex items-center gap-2 px-4 py-2 text-sm transition-all ${activeTab === tabItem.key ? 'bg-zinc-100 dark:bg-zinc-800/80' : 'hover:bg-zinc-50 dark:hover:bg-zinc-700'}`}
-            >
-              <tabItem.icon className="size-3.5" />
-              {tabItem.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-6">
-          {activeTab === 'tasks' && (
-            <div className=" dark:bg-zinc-900/40 rounded max-w-6xl">
-              <ProjectTasks
-                tasks={tasks}
-                isAdmin={isAdmin}
-                isTeamLead={isTeamLead}
-              />
-            </div>
-          )}
-          {activeTab === 'analytics' && (
-            <div className=" dark:bg-zinc-900/40 rounded max-w-6xl">
-              <ProjectAnalytics tasks={tasks} project={project} />
-            </div>
-          )}
-          {activeTab === 'calendar' && (
-            <div className=" dark:bg-zinc-900/40 rounded max-w-6xl">
-              <ProjectCalendar tasks={tasks} />
-            </div>
-          )}
-          {activeTab === 'settings' && (
-            <div className=" dark:bg-zinc-900/40 rounded max-w-6xl">
-              <ProjectSettings project={project} />
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Create Task Modal */}

@@ -34,12 +34,12 @@ const ProjectSidebar = () => {
     {
       title: 'Analytics',
       icon: ChartColumnIcon,
-      url: `/projectsDetail?id=${projectId}&tab=analytics`,
+      url: `/projects/${projectId}/analytics`,
     },
     {
       title: 'Calendar',
       icon: CalendarIcon,
-      url: `/projectsDetail?id=${projectId}&tab=calendar`,
+      url: `/projects/${projectId}/calendar`,
     },
     ...(isAdmin
       ? [
@@ -51,6 +51,14 @@ const ProjectSidebar = () => {
         ]
       : []),
   ];
+
+  const statusDotClasses = {
+    PLANNING: 'bg-amber-400',
+    ACTIVE: 'bg-emerald-500',
+    COMPLETED: 'bg-blue-500',
+    ON_HOLD: 'bg-orange-500',
+    CANCELLED: 'bg-rose-500',
+  };
 
   const toggleProject = (id) => {
     const newSet = new Set(expandedProjects);
@@ -81,7 +89,9 @@ const ProjectSidebar = () => {
               <ChevronRightIcon
                 className={`size-3 text-gray-500 dark:text-zinc-400 transition-transform duration-200 ${expandedProjects.has(project.id) && 'rotate-90'}`}
               />
-              <div className="size-2 rounded-full bg-blue-500" />
+              <div
+                className={`size-2 rounded-full ${statusDotClasses[project.status] || 'bg-zinc-400'}`}
+              />
               <span className="truncate max-w-40 text-sm">{project.name}</span>
             </button>
 
@@ -89,10 +99,24 @@ const ProjectSidebar = () => {
               <div className="ml-5 mt-1 space-y-1">
                 {getProjectSubItems(project.id).map((subItem) => {
                   // checking if the current path matches the sub-item's URL
+                  const isProjectDetail =
+                    location.pathname === '/projectsDetail' &&
+                    searchParams.get('id') === project.id;
+                  const isAnalytics =
+                    location.pathname === `/projects/${project.id}/analytics`;
+                  const isCalendar =
+                    location.pathname === `/projects/${project.id}/calendar`;
+                  const isTasks =
+                    isProjectDetail &&
+                    (searchParams.get('tab') === 'tasks' ||
+                      !searchParams.get('tab'));
+                  const isSettings =
+                    isProjectDetail && searchParams.get('tab') === 'settings';
                   const isActive =
-                    location.pathname === `/projectsDetail` &&
-                    searchParams.get('id') === project.id &&
-                    searchParams.get('tab') === subItem.title.toLowerCase();
+                    (subItem.title === 'Tasks' && isTasks) ||
+                    (subItem.title === 'Settings' && isSettings) ||
+                    (subItem.title === 'Analytics' && isAnalytics) ||
+                    (subItem.title === 'Calendar' && isCalendar);
 
                   return (
                     <Link

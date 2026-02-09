@@ -1,5 +1,6 @@
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
+import ClientDashboard from '../components/ClientDashboard';
 import StatsGrid from '../components/StatsGrid';
 import ProjectOverview from '../components/ProjectOverview';
 import RecentActivity from '../components/RecentActivity';
@@ -15,7 +16,12 @@ const Dashboard = () => {
     (m) => m.user.id === user?.id
   )?.role;
   const isAdmin = user?.role === 'ADMIN' || memberRole === 'ADMIN';
+  const isClient = user?.role === 'CLIENT';
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  if (isClient) {
+    return <ClientDashboard />;
+  }
 
   return (
     <div className="w-full max-w-6xl mx-auto min-h-full space-y-6 sm:space-y-8">

@@ -1,3 +1,4 @@
+import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 
 const statusColors = {
@@ -9,7 +10,13 @@ const statusColors = {
   CANCELLED: 'bg-red-200 dark:bg-red-500 text-red-900 dark:text-red-900',
 };
 
+const formatDate = (value) =>
+  value ? new Date(value).toLocaleDateString() : 'N/A';
+
 const ProjectCard = ({ project }) => {
+  const user = useSelector((state) => state.auth.user);
+  const isClient = user?.role === 'CLIENT';
+
   return (
     <Link
       to={`/projectsDetail?id=${project.id}&tab=tasks`}
@@ -29,6 +36,12 @@ const ProjectCard = ({ project }) => {
               Client: {project.client.name}
             </p>
           )}
+          {isClient && (project.start_date || project.end_date) && (
+            <p className="text-xs text-gray-500 dark:text-zinc-500 mt-2">
+              Timeline: {formatDate(project.start_date)} -{' '}
+              {formatDate(project.end_date)}
+            </p>
+          )}
         </div>
       </div>
 
@@ -38,9 +51,11 @@ const ProjectCard = ({ project }) => {
         >
           {project.status.replace('_', ' ')}
         </span>
-        <span className="text-xs text-gray-500 dark:text-zinc-500 capitalize">
-          {project.priority} priority
-        </span>
+        {!isClient && (
+          <span className="text-xs text-gray-500 dark:text-zinc-500 capitalize">
+            {project.priority} priority
+          </span>
+        )}
       </div>
 
       {/* Progress */}

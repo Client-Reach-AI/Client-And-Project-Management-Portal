@@ -5,7 +5,9 @@ import MyTasksSidebar from './MyTasksSidebar';
 import ProjectSidebar from './ProjectsSidebar';
 import WorkspaceDropdown from './WorkspaceDropdown';
 import {
+  BarChart3Icon,
   BriefcaseIcon,
+  CalendarIcon,
   CheckSquareIcon,
   FolderOpenIcon,
   LayoutDashboardIcon,
@@ -21,19 +23,75 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
     (m) => m.user.id === user?.id
   )?.role;
   const isAdmin = user?.role === 'ADMIN' || memberRole === 'ADMIN';
+  const isClient = user?.role === 'CLIENT';
+  const clientProjectId = currentWorkspace?.projects?.[0]?.id || null;
+  const analyticsHref = clientProjectId
+    ? `/projects/${clientProjectId}/analytics`
+    : '/projects';
+  const calendarHref = clientProjectId
+    ? `/projects/${clientProjectId}/calendar`
+    : '/projects';
 
-  const menuItems = [
-    { name: 'Dashboard', href: '/', icon: LayoutDashboardIcon },
-    { name: 'My Tasks', href: '/my-tasks', icon: CheckSquareIcon },
-    { name: 'Projects', href: '/projects', icon: FolderOpenIcon },
-    ...(isAdmin
-      ? [
-          { name: 'Team', href: '/team', icon: UsersIcon },
-          { name: 'Clients', href: '/clients', icon: BriefcaseIcon },
-        ]
-      : []),
-    { name: 'Settings', href: '/settings', icon: SettingsIcon },
-  ];
+  const menuItems = isClient
+    ? [
+        {
+          name: 'Dashboard',
+          href: '/',
+          icon: LayoutDashboardIcon,
+          exact: true,
+        },
+        {
+          name: 'Projects',
+          href: '/projects',
+          icon: FolderOpenIcon,
+          exact: true,
+        },
+        { name: 'Analytics', href: analyticsHref, icon: BarChart3Icon },
+        { name: 'Calendar', href: calendarHref, icon: CalendarIcon },
+        {
+          name: 'Settings',
+          href: '/settings',
+          icon: SettingsIcon,
+          exact: true,
+        },
+      ]
+    : [
+        {
+          name: 'Dashboard',
+          href: '/',
+          icon: LayoutDashboardIcon,
+          exact: true,
+        },
+        {
+          name: 'My Tasks',
+          href: '/my-tasks',
+          icon: CheckSquareIcon,
+          exact: true,
+        },
+        {
+          name: 'Projects',
+          href: '/projects',
+          icon: FolderOpenIcon,
+          exact: true,
+        },
+        ...(isAdmin
+          ? [
+              { name: 'Team', href: '/team', icon: UsersIcon, exact: true },
+              {
+                name: 'Clients',
+                href: '/clients',
+                icon: BriefcaseIcon,
+                exact: true,
+              },
+            ]
+          : []),
+        {
+          name: 'Settings',
+          href: '/settings',
+          icon: SettingsIcon,
+          exact: true,
+        },
+      ];
 
   const sidebarRef = useRef(null);
 
@@ -56,7 +114,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
   return (
     <div
       ref={sidebarRef}
-      className={`z-30 bg-white dark:bg-zinc-900 w-[17rem] flex flex-col h-screen border-r border-gray-200 dark:border-zinc-800 fixed top-0 left-0 max-sm:shadow-lg transition-transform max-sm:duration-300 ${isSidebarOpen ? 'max-sm:translate-x-0' : 'max-sm:-translate-x-full'} `}
+      className={`z-30 bg-white dark:bg-zinc-900 w-68 flex flex-col h-screen border-r border-gray-200 dark:border-zinc-800 fixed top-0 left-0 max-sm:shadow-lg transition-transform max-sm:duration-300 ${isSidebarOpen ? 'max-sm:translate-x-0' : 'max-sm:-translate-x-full'} `}
     >
       <WorkspaceDropdown />
       <hr className="border-gray-200 dark:border-zinc-800" />
@@ -68,6 +126,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
                 to={item.href}
                 key={item.name}
                 onClick={handleNavClick}
+                end={Boolean(item.exact)}
                 className={({ isActive }) =>
                   `flex items-center gap-3 py-2 px-4 text-gray-800 dark:text-zinc-100 cursor-pointer rounded transition-all  ${isActive ? 'bg-gray-100 dark:bg-zinc-900 dark:bg-linear-to-br dark:from-zinc-800 dark:to-zinc-800/50  dark:ring-zinc-800' : 'hover:bg-gray-50 dark:hover:bg-zinc-800/60'}`
                 }
@@ -77,8 +136,8 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
               </NavLink>
             ))}
           </div>
-          <MyTasksSidebar />
-          <ProjectSidebar />
+          {!isClient && <MyTasksSidebar />}
+          {!isClient && <ProjectSidebar />}
         </div>
       </div>
     </div>

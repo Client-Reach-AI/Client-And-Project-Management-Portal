@@ -7,6 +7,7 @@ export default function TasksSummary() {
   const { currentWorkspace } = useWorkspaceContext();
   const user = useSelector((state) => state.auth.user);
   const [tasks, setTasks] = useState([]);
+  const isClient = user?.role === 'CLIENT';
 
   // Get all tasks for all projects in current workspace
   useEffect(() => {
@@ -47,7 +48,7 @@ export default function TasksSummary() {
       color: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-400',
       items: inProgressIssues.slice(0, 3),
     },
-  ];
+  ].filter((card) => !(isClient && card.title === 'My Tasks'));
 
   return (
     <div className="space-y-6">

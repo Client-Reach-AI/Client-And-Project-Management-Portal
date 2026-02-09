@@ -18,9 +18,11 @@ const Navbar = ({ setIsSidebarOpen }) => {
   const roleLabel =
     user?.role === 'ADMIN'
       ? 'Global Admin'
-      : memberRole === 'ADMIN'
-        ? 'Workspace Admin'
-        : 'User';
+      : user?.role === 'CLIENT'
+        ? 'Client'
+        : memberRole === 'ADMIN'
+          ? 'Workspace Admin'
+          : 'User';
 
   return (
     <div className="w-full bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 px-6 xl:px-16 py-3 shrink-0">

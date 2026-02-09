@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useSelector } from 'react-redux';
+import { Navigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
   DndContext,
@@ -71,7 +72,7 @@ const Column = ({ column, tasks }) => {
   return (
     <div
       ref={setNodeRef}
-      className={`flex flex-col gap-3 rounded-xl border ${column.color} bg-zinc-50/60 dark:bg-zinc-950/40 p-4 min-h-[320px] transition ${
+      className={`flex flex-col gap-3 rounded-xl border ${column.color} bg-zinc-50/60 dark:bg-zinc-950/40 p-4 min-h-80 transition ${
         isOver ? 'ring-2 ring-blue-500/30' : ''
       }`}
     >
@@ -102,6 +103,10 @@ const MyTasks = () => {
   const user = useSelector((state) => state.auth.user);
   const { mutateAsync: updateTask } = useUpdateTask();
   const sensors = useSensors(useSensor(PointerSensor));
+
+  if (user?.role === 'CLIENT') {
+    return <Navigate to="/" replace />;
+  }
 
   const myTasks = useMemo(() => {
     const tasks = currentWorkspace?.projects?.flatMap((project) =>
