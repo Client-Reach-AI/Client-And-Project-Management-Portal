@@ -5,6 +5,8 @@ import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import Team from './pages/Team';
 import ProjectDetails from './pages/ProjectDetails';
+import ProjectAnalyticsPage from './pages/ProjectAnalyticsPage';
+import ProjectCalendarPage from './pages/ProjectCalendarPage';
 import TaskDetails from './pages/TaskDetails';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
@@ -63,6 +65,14 @@ const App = () => {
           <Route path="clients" element={<Clients />} />
           <Route path="projects" element={<Projects />} />
           <Route path="projectsDetail" element={<ProjectDetails />} />
+          <Route
+            path="projects/:id/analytics"
+            element={<ProjectAnalyticsPage />}
+          />
+          <Route
+            path="projects/:id/calendar"
+            element={<ProjectCalendarPage />}
+          />
           <Route path="taskDetails" element={<TaskDetails />} />
           <Route path="settings" element={<Settings />} />
         </Route>
