@@ -15,7 +15,7 @@ import {
 } from './db/schema.js';
 
 const run = async () => {
-  const adminPasswordHash = await bcrypt.hash('admin1234', 10);
+  const adminPasswordHash = await bcrypt.hash('admin@1234', 10);
 
   await db.delete(comments);
   await db.delete(tasks);
