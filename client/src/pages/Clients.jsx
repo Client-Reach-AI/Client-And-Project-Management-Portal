@@ -322,33 +322,6 @@ const Clients = () => {
     setSortBy('name-asc');
   };
 
-  const buildProjectDescription = (payload = {}) => {
-    const business = payload.business_details || {};
-    const serviceSummary = buildServiceSummary(payload);
-
-    const sections = [
-      payload.service_type &&
-        `Service: ${getServiceLabel(payload.service_type)}`,
-      payload.industry && `Industry: ${payload.industry}`,
-      business.problem_solving && `Problem: ${business.problem_solving}`,
-      business.success_90_days && `90-Day Success: ${business.success_90_days}`,
-      business.launch_date && `Launch Date: ${business.launch_date}`,
-      business.biggest_concern &&
-        `Biggest Concern: ${business.biggest_concern}`,
-      serviceSummary && `Service Details:\n${serviceSummary}`,
-      payload.goals && `Goals: ${payload.goals}`,
-      payload.targetAudience && `Audience: ${payload.targetAudience}`,
-      payload.budget && `Budget: ${payload.budget}`,
-      payload.timeline && `Timeline: ${payload.timeline}`,
-      payload.successMetrics && `Success: ${payload.successMetrics}`,
-      payload.brandGuidelines && `Brand: ${payload.brandGuidelines}`,
-      payload.competitors && `Competitors: ${payload.competitors}`,
-      payload.notes && `Notes: ${payload.notes}`,
-    ].filter(Boolean);
-
-    return sections.join('\n');
-  };
-
   const intakePayload = selectedIntake?.payload || {};
   const DetailItem = ({ label, value, multiline = false }) => {
     const displayValue =
@@ -810,14 +783,6 @@ const Clients = () => {
           isDialogOpen={showProjectDialog}
           setIsDialogOpen={setShowProjectDialog}
           initialData={{
-            name:
-              intakePayload.projectName ||
-              intakePayload.contact_name ||
-              intakePayload.clientName ||
-              '',
-            description: buildProjectDescription(intakePayload),
-            status: 'PLANNING',
-            priority: 'MEDIUM',
             clientId: selectedIntake?.clientId || null,
             clientName:
               intakePayload.contact_name ||

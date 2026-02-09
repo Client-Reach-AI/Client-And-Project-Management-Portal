@@ -1,9 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { XIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCreateProject } from '../hooks/useMutations';
 import { useClients } from '../hooks/useQueries';
 import { useWorkspaceContext } from '../context/workspaceContext';
+
+const DEFAULT_FORM_DATA = {
+  name: '',
+  description: '',
+  status: 'PLANNING',
+  priority: 'MEDIUM',
+  start_date: '',
+  end_date: '',
+  team_members: [],
+  team_lead: '',
+  progress: 0,
+  clientId: '',
+};
 
 const CreateProjectDialog = ({
   isDialogOpen,
@@ -16,30 +29,26 @@ const CreateProjectDialog = ({
     currentWorkspace?.id
   );
 
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    status: 'PLANNING',
-    priority: 'MEDIUM',
-    start_date: '',
-    end_date: '',
-    team_members: [],
-    team_lead: '',
-    progress: 0,
-    clientId: '',
-  });
+  const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
+  const [createClientPortal, setCreateClientPortal] = useState(false);
+  const wasOpen = useRef(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    if (!initialData) return;
-    setFormData((prev) => ({
-      ...prev,
-      ...initialData,
-      clientId: initialData?.clientId || prev.clientId || '',
-    }));
-  }, [initialData]);
+    if (isDialogOpen && !wasOpen.current) {
+      setFormData({
+        ...DEFAULT_FORM_DATA,
+        ...(initialData || {}),
+        clientId: initialData?.clientId || '',
+      });
+      setCreateClientPortal(Boolean(initialData?.clientId));
+      setErrors({});
+    }
+
+    wasOpen.current = isDialogOpen;
+  }, [initialData, isDialogOpen]);
 
   useEffect(() => {
     if (isDialogOpen) {
@@ -121,6 +130,7 @@ const CreateProjectDialog = ({
         payload: {
           workspaceId: currentWorkspace.id,
           clientId: formData.clientId || null,
+          createClientPortal: Boolean(formData.clientId && createClientPortal),
           name: formData.name,
           description: formData.description,
           status: formData.status,
@@ -226,6 +236,19 @@ const CreateProjectDialog = ({
                 </option>
               ))}
             </select>
+            {formData.clientId && (
+              <label className="mt-2 flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
+                <input
+                  type="checkbox"
+                  checked={createClientPortal}
+                  onChange={(event) =>
+                    setCreateClientPortal(event.target.checked)
+                  }
+                  className="accent-blue-500"
+                />
+                Create client portal access when this project is created.
+              </label>
+            )}
           </div>
 
           {/* Status & Priority */}

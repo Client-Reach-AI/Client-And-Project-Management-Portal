@@ -22,6 +22,7 @@ import {
   updateWorkspace,
   deleteWorkspace,
   createPublicClientIntake,
+  createProjectClientInvite,
 } from '../api';
 import {
   clientKeys,
@@ -143,6 +144,11 @@ export const useUpdateProject = () => {
     },
   });
 };
+
+export const useCreateProjectClientInvite = () =>
+  useMutation({
+    mutationFn: ({ projectId }) => createProjectClientInvite(projectId),
+  });
 
 export const useCreateTask = () => {
   const queryClient = useQueryClient();

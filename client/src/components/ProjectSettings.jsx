@@ -4,7 +4,10 @@ import { useEffect, useState } from 'react';
 import AddProjectMember from './AddProjectMember';
 import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
-import { useUpdateProject } from '../hooks/useMutations';
+import {
+  useCreateProjectClientInvite,
+  useUpdateProject,
+} from '../hooks/useMutations';
 import { useWorkspaceContext } from '../context/workspaceContext';
 
 export default function ProjectSettings({ project }) {
@@ -20,9 +23,12 @@ export default function ProjectSettings({ project }) {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [inviteLink, setInviteLink] = useState('');
   const user = useSelector((state) => state.auth.user);
   const { currentWorkspace } = useWorkspaceContext();
   const { mutateAsync: updateProject, isPending } = useUpdateProject();
+  const { mutateAsync: createInvite, isPending: invitePending } =
+    useCreateProjectClientInvite();
   const memberRole = currentWorkspace?.members?.find(
     (m) => m.user.id === user?.id
   )?.role;
@@ -55,6 +61,40 @@ export default function ProjectSettings({ project }) {
       toast.error(error?.message || 'Failed to update project');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleCreateInvite = async () => {
+    if (!project?.id) return;
+    try {
+      const result = await createInvite({ projectId: project.id });
+      if (!result?.inviteLink) {
+        toast.error('Invite link not available');
+        return;
+      }
+      setInviteLink(result.inviteLink);
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(result.inviteLink);
+        toast.success('Invite link copied');
+      } else {
+        toast.success('Invite link ready');
+      }
+    } catch (error) {
+      toast.error(error?.message || 'Failed to create invite link');
+    }
+  };
+
+  const handleCopyInvite = async () => {
+    if (!inviteLink) return;
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(inviteLink);
+        toast.success('Invite link copied');
+      } else {
+        toast.error('Clipboard not available');
+      }
+    } catch {
+      toast.error('Failed to copy invite link');
     }
   };
 
@@ -204,6 +244,39 @@ export default function ProjectSettings({ project }) {
 
       {/* Team Members */}
       <div className="space-y-6">
+        {isAdmin && project?.clientId && (
+          <div className={cardClasses}>
+            <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-300 mb-4">
+              Client Portal Access
+            </h2>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              Generate a shareable invite link for the client portal.
+            </p>
+            {inviteLink && (
+              <div className="mt-3 rounded border border-emerald-200 bg-emerald-50 text-emerald-900 px-3 py-2 text-xs break-all">
+                {inviteLink}
+              </div>
+            )}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleCreateInvite}
+                disabled={invitePending}
+                className="px-3 py-2 rounded bg-linear-to-br from-blue-500 to-blue-600 text-white text-xs"
+              >
+                {invitePending ? 'Generating...' : 'Generate invite link'}
+              </button>
+              <button
+                type="button"
+                onClick={handleCopyInvite}
+                disabled={!inviteLink}
+                className="px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 text-xs"
+              >
+                Copy link
+              </button>
+            </div>
+          </div>
+        )}
         <div className={cardClasses}>
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-300 mb-4">

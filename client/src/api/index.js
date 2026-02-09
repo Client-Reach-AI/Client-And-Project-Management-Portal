@@ -40,6 +40,11 @@ export const updateProject = async (id, payload) =>
     body: JSON.stringify(payload),
   });
 
+export const createProjectClientInvite = async (projectId) =>
+  apiFetch(`/api/projects/${projectId}/client-invite`, {
+    method: 'POST',
+  });
+
 export const createTask = async (projectId, payload) =>
   apiFetch(`/api/projects/${projectId}/tasks`, {
     method: 'POST',
