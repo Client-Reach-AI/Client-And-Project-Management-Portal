@@ -159,3 +159,27 @@ export const declineInvitation = async (payload) =>
     method: 'POST',
     body: JSON.stringify(payload),
   });
+
+export const fetchSharedFiles = async ({
+  workspaceId,
+  clientId,
+  projectId,
+} = {}) => {
+  const params = new URLSearchParams();
+  if (workspaceId) params.set('workspaceId', workspaceId);
+  if (clientId) params.set('clientId', clientId);
+  if (projectId) params.set('projectId', projectId);
+  return apiFetch(`/api/files?${params.toString()}`);
+};
+
+export const createSharedFile = async (payload) =>
+  apiFetch('/api/files', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
+export const createFileSignature = async (payload) =>
+  apiFetch('/api/files/signature', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });

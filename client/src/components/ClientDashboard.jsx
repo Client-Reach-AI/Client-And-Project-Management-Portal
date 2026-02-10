@@ -156,39 +156,53 @@ const ClientDashboard = () => {
           <RecentActivity />
         </div>
 
-        <div className="space-y-4">
-          {[
-            {
-              title: 'Files & Links',
-              body: 'Shared files and links will appear here.',
-              icon: FileTextIcon,
-            },
-            {
-              title: 'Invoices',
-              body: 'Billing summaries and invoices are coming soon.',
-              icon: WalletIcon,
-            },
-            {
-              title: 'Messages',
-              body: 'Project updates and messages will appear here.',
-              icon: MessageSquareIcon,
-            },
-          ].map((card) => (
-            <div
-              key={card.title}
-              className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4"
-            >
-              <div className="flex items-center gap-2">
-                <card.icon className="size-4 text-zinc-500 dark:text-zinc-400" />
-                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                  {card.title}
-                </h3>
-              </div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
-                {card.body}
-              </p>
-            </div>
-          ))}
+        <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-5 space-y-4">
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-900 dark:text-white">
+              Quick access
+            </h2>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Jump straight to the client portal essentials.
+            </p>
+          </div>
+          <div className="space-y-3">
+            {[
+              {
+                title: 'Files & Links',
+                body: 'Shared files and links will appear here.',
+                icon: FileTextIcon,
+                to: '/client-files',
+              },
+              {
+                title: 'Invoices',
+                body: 'Billing summaries and invoices are coming soon.',
+                icon: WalletIcon,
+                to: '/client-invoices',
+              },
+              {
+                title: 'Messages',
+                body: 'Project updates and messages will appear here.',
+                icon: MessageSquareIcon,
+                to: '/client-messages',
+              },
+            ].map((card) => (
+              <Link
+                key={card.title}
+                to={card.to}
+                className="group block rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/60 p-4 transition hover:border-zinc-400 hover:bg-zinc-100 dark:hover:border-zinc-600 dark:hover:bg-zinc-800"
+              >
+                <div className="flex items-center gap-2">
+                  <card.icon className="size-4 text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white" />
+                  <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-zinc-900 dark:group-hover:text-white">
+                    {card.title}
+                  </h3>
+                </div>
+                <p className="text-xs text-zinc-600 dark:text-zinc-300 mt-2 group-hover:text-zinc-800 dark:group-hover:text-zinc-200">
+                  {card.body}
+                </p>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </div>

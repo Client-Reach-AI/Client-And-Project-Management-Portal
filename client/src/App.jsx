@@ -14,6 +14,10 @@ import AcceptInvite from './pages/AcceptInvite';
 import Clients from './pages/Clients';
 import ClientIntake from './pages/ClientIntake';
 import MyTasks from './pages/MyTasks';
+import ClientFilesLinks from './pages/ClientFilesLinks';
+import ClientInvoices from './pages/ClientInvoices';
+import ClientMessages from './pages/ClientMessages';
+import ClientDetails from './pages/ClientDetails';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useRef } from 'react';
 import { loadAuthFromStorage } from './features/authSlice';
@@ -63,6 +67,10 @@ const App = () => {
           <Route path="team" element={<Team />} />
           <Route path="my-tasks" element={<MyTasks />} />
           <Route path="clients" element={<Clients />} />
+          <Route path="clients/:id" element={<ClientDetails />} />
+          <Route path="client-files" element={<ClientFilesLinks />} />
+          <Route path="client-invoices" element={<ClientInvoices />} />
+          <Route path="client-messages" element={<ClientMessages />} />
           <Route path="projects" element={<Projects />} />
           <Route path="projectsDetail" element={<ProjectDetails />} />
           <Route

@@ -9,10 +9,13 @@ import {
   BriefcaseIcon,
   CalendarIcon,
   CheckSquareIcon,
+  FileTextIcon,
   FolderOpenIcon,
   LayoutDashboardIcon,
+  MessageSquareIcon,
   SettingsIcon,
   UsersIcon,
+  WalletIcon,
 } from 'lucide-react';
 import { useWorkspaceContext } from '../context/workspaceContext';
 
@@ -44,6 +47,24 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
           name: 'Projects',
           href: '/projects',
           icon: FolderOpenIcon,
+          exact: true,
+        },
+        {
+          name: 'Files & Links',
+          href: '/client-files',
+          icon: FileTextIcon,
+          exact: true,
+        },
+        {
+          name: 'Invoices',
+          href: '/client-invoices',
+          icon: WalletIcon,
+          exact: true,
+        },
+        {
+          name: 'Messages',
+          href: '/client-messages',
+          icon: MessageSquareIcon,
           exact: true,
         },
         { name: 'Analytics', href: analyticsHref, icon: BarChart3Icon },

@@ -12,6 +12,7 @@ import {
   tasks,
   comments,
   invitations,
+  sharedFiles,
 } from './db/schema.js';
 
 const run = async () => {
@@ -24,6 +25,7 @@ const run = async () => {
   await db.delete(projects);
   await db.delete(clientIntakes);
   await db.delete(clients);
+  await db.delete(sharedFiles);
   await db.delete(workspaceMembers);
   await db.delete(workspaces);
   await db.delete(users);
@@ -75,6 +77,37 @@ const run = async () => {
       settings: { theme: 'marine' },
       ownerId: 'user_admin',
       image_url: null,
+    },
+  ]);
+
+  await db.insert(workspaceMembers).values([
+    {
+      id: 'wm_core_admin',
+      workspaceId: 'org_core',
+      userId: 'user_admin',
+      role: 'ADMIN',
+      message: 'Workspace owner',
+    },
+    {
+      id: 'wm_marketing_admin',
+      workspaceId: 'org_marketing',
+      userId: 'user_admin',
+      role: 'ADMIN',
+      message: 'Workspace owner',
+    },
+    {
+      id: 'wm_delivery_admin',
+      workspaceId: 'org_delivery',
+      userId: 'user_admin',
+      role: 'ADMIN',
+      message: 'Workspace owner',
+    },
+    {
+      id: 'wm_internal_admin',
+      workspaceId: 'org_internal',
+      userId: 'user_admin',
+      role: 'ADMIN',
+      message: 'Workspace owner',
     },
   ]);
 };
