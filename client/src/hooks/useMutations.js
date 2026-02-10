@@ -23,6 +23,8 @@ import {
   deleteWorkspace,
   createPublicClientIntake,
   createProjectClientInvite,
+  createSharedFile,
+  createFileSignature,
 } from '../api';
 import {
   clientKeys,
@@ -30,6 +32,7 @@ import {
   projectKeys,
   taskKeys,
   workspaceKeys,
+  fileKeys,
 } from './queryKeys';
 
 export const useCreateWorkspace = () => {
@@ -230,6 +233,27 @@ export const useSendInvitation = () => {
     },
   });
 };
+
+export const useCreateSharedFile = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createSharedFile,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: fileKeys.list(
+          variables.workspaceId,
+          variables.clientId,
+          variables.projectId
+        ),
+      });
+    },
+  });
+};
+
+export const useCreateFileSignature = () =>
+  useMutation({
+    mutationFn: createFileSignature,
+  });
 
 export const useAcceptInvitation = () => {
   const queryClient = useQueryClient();

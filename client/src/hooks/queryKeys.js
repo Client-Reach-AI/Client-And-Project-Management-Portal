@@ -21,3 +21,12 @@ export const intakeKeys = {
   list: (workspaceId) => ['clientIntakes', workspaceId],
   lookup: (token) => ['clientIntake', token],
 };
+
+export const fileKeys = {
+  list: (workspaceId, clientId, projectId) => [
+    'sharedFiles',
+    workspaceId,
+    clientId || null,
+    projectId || null,
+  ],
+};

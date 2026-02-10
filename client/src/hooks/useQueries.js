@@ -9,6 +9,7 @@ import {
   fetchClients,
   fetchClientIntakes,
   lookupClientIntake,
+  fetchSharedFiles,
 } from '../api';
 import {
   clientKeys,
@@ -16,6 +17,7 @@ import {
   projectKeys,
   taskKeys,
   workspaceKeys,
+  fileKeys,
 } from './queryKeys';
 
 export const useWorkspaces = (options = {}) =>
@@ -88,5 +90,16 @@ export const useClientIntakeLookup = (token, options = {}) =>
     queryKey: intakeKeys.lookup(token),
     queryFn: () => lookupClientIntake(token),
     enabled: Boolean(token),
+    ...options,
+  });
+
+export const useSharedFiles = (
+  { workspaceId, clientId, projectId } = {},
+  options = {}
+) =>
+  useQuery({
+    queryKey: fileKeys.list(workspaceId, clientId, projectId),
+    queryFn: () => fetchSharedFiles({ workspaceId, clientId, projectId }),
+    enabled: Boolean(workspaceId),
     ...options,
   });
