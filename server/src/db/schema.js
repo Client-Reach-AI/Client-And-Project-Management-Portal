@@ -196,3 +196,26 @@ export const invitations = pgTable('invitations', {
     .defaultNow()
     .notNull(),
 });
+
+export const sharedFiles = pgTable('shared_files', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id')
+    .notNull()
+    .references(() => workspaces.id),
+  clientId: text('client_id').references(() => clients.id),
+  projectId: text('project_id').references(() => projects.id),
+  name: text('name').notNull(),
+  type: text('type').notNull(),
+  url: text('url').notNull(),
+  size: integer('size'),
+  mimeType: text('mime_type'),
+  cloudinaryPublicId: text('cloudinary_public_id'),
+  uploadedBy: text('uploaded_by').references(() => users.id),
+  metadata: jsonb('metadata').default({}),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
