@@ -1,16 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link as LinkIcon, UploadCloud as UploadCloudIcon } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { useWorkspaceContext } from '../context/workspaceContext';
-import { useSharedFiles } from '../hooks/useQueries';
+import { useEffect, useMemo, useState } from "react";
+import { Link as LinkIcon, UploadCloud as UploadCloudIcon } from "lucide-react";
+import toast from "react-hot-toast";
+import { useWorkspaceContext } from "../context/workspaceContext";
+import { useSharedFiles } from "../hooks/useQueries";
 import {
   useCreateFileSignature,
   useCreateSharedFile,
-} from '../hooks/useMutations';
+} from "../hooks/useMutations";
 
 const formatBytes = (bytes) => {
-  if (!bytes && bytes !== 0) return 'N/A';
-  const units = ['B', 'KB', 'MB', 'GB'];
+  if (!bytes && bytes !== 0) return "N/A";
+  const units = ["B", "KB", "MB", "GB"];
   let size = bytes;
   let index = 0;
   while (size >= 1024 && index < units.length - 1) {
@@ -22,14 +22,14 @@ const formatBytes = (bytes) => {
 
 const ensureUrl = (value) => {
   if (!value) return value;
-  return value.startsWith('http') ? value : `https://${value}`;
+  return value.startsWith("http") ? value : `https://${value}`;
 };
 
 const buildOpenUrl = (item) => {
   const url = ensureUrl(item?.url);
   if (!url) return url;
-  if (item?.mimeType?.includes('pdf') && url.includes('/image/upload/')) {
-    return url.replace('/image/upload/', '/raw/upload/');
+  if (item?.mimeType?.includes("pdf") && url.includes("/image/upload/")) {
+    return url.replace("/image/upload/", "/raw/upload/");
   }
   return url;
 };
@@ -37,8 +37,12 @@ const buildOpenUrl = (item) => {
 const buildDownloadUrl = (item) => {
   const url = buildOpenUrl(item);
   if (!url) return url;
-  return url.includes('/upload/')
-    ? url.replace('/upload/', '/upload/fl_attachment/')
+  // Raw files (like PDFs) don't support fl_attachment via this path structure
+  if (url.includes("/raw/upload/")) {
+    return url;
+  }
+  return url.includes("/upload/")
+    ? url.replace("/upload/", "/upload/fl_attachment/")
     : url;
 };
 
@@ -46,25 +50,25 @@ const ClientFilesLinks = () => {
   const { currentWorkspace } = useWorkspaceContext();
   const projects = currentWorkspace?.projects || [];
 
-  const [projectFilter, setProjectFilter] = useState('all');
-  const [linkName, setLinkName] = useState('');
-  const [linkUrl, setLinkUrl] = useState('');
+  const [projectFilter, setProjectFilter] = useState("all");
+  const [linkName, setLinkName] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (!projects.length) {
-      setProjectFilter('all');
+      setProjectFilter("all");
       return;
     }
 
-    if (projectFilter !== 'all') {
+    if (projectFilter !== "all") {
       const exists = projects.some((project) => project.id === projectFilter);
-      if (!exists) setProjectFilter('all');
+      if (!exists) setProjectFilter("all");
     }
   }, [projects, projectFilter]);
 
   const workspaceId = currentWorkspace?.id || null;
-  const projectId = projectFilter === 'all' ? null : projectFilter;
+  const projectId = projectFilter === "all" ? null : projectFilter;
 
   const { data: files = [], isLoading } = useSharedFiles({
     workspaceId,
@@ -90,34 +94,34 @@ const ClientFilesLinks = () => {
       const signature = await createSignature({ workspaceId });
 
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('api_key', signature.apiKey);
-      formData.append('timestamp', signature.timestamp);
-      formData.append('signature', signature.signature);
-      formData.append('folder', signature.folder);
-      formData.append('public_id', signature.publicId);
-      formData.append('access_mode', signature.accessMode || 'public');
+      formData.append("file", file);
+      formData.append("api_key", signature.apiKey);
+      formData.append("timestamp", signature.timestamp);
+      formData.append("signature", signature.signature);
+      formData.append("folder", signature.folder);
+      formData.append("public_id", signature.publicId);
+      formData.append("access_mode", signature.accessMode || "public");
 
-      const isImage = file.type?.startsWith('image/');
-      const resourceType = isImage ? 'image' : 'raw';
+      const isImage = file.type?.startsWith("image/");
+      const resourceType = isImage ? "image" : "raw";
       const uploadResponse = await fetch(
         `https://api.cloudinary.com/v1_1/${signature.cloudName}/${resourceType}/upload`,
         {
-          method: 'POST',
+          method: "POST",
           body: formData,
-        }
+        },
       );
 
       const uploaded = await uploadResponse.json();
       if (!uploadResponse.ok || uploaded?.error) {
-        throw new Error(uploaded?.error?.message || 'Upload failed');
+        throw new Error(uploaded?.error?.message || "Upload failed");
       }
 
       await createFileRecord({
         workspaceId,
         projectId,
         name: file.name,
-        type: 'FILE',
+        type: "FILE",
         url: uploaded.secure_url,
         size: uploaded.bytes,
         mimeType: file.type,
@@ -127,12 +131,12 @@ const ClientFilesLinks = () => {
         },
       });
 
-      toast.success('File uploaded');
+      toast.success("File uploaded");
     } catch (error) {
-      toast.error(error?.message || 'Failed to upload');
+      toast.error(error?.message || "Failed to upload");
     } finally {
       setUploading(false);
-      event.target.value = '';
+      event.target.value = "";
     }
   };
 
@@ -142,7 +146,7 @@ const ClientFilesLinks = () => {
 
     try {
       if (!linkName.trim() || !linkUrl.trim()) {
-        toast.error('Name and URL are required');
+        toast.error("Name and URL are required");
         return;
       }
 
@@ -152,15 +156,15 @@ const ClientFilesLinks = () => {
         workspaceId,
         projectId,
         name: linkName.trim(),
-        type: 'LINK',
+        type: "LINK",
         url: resolvedUrl,
       });
 
-      setLinkName('');
-      setLinkUrl('');
-      toast.success('Link added');
+      setLinkName("");
+      setLinkUrl("");
+      toast.success("Link added");
     } catch (error) {
-      toast.error(error?.message || 'Failed to add link');
+      toast.error(error?.message || "Failed to add link");
     }
   };
 
@@ -185,7 +189,7 @@ const ClientFilesLinks = () => {
           </h3>
           <label className="flex items-center justify-center gap-2 px-4 py-3 border border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg text-xs text-zinc-500 dark:text-zinc-400 cursor-pointer">
             <UploadCloudIcon className="size-4" />
-            {uploading ? 'Uploading...' : 'Select a file'}
+            {uploading ? "Uploading..." : "Select a file"}
             <input
               type="file"
               onChange={handleUpload}
@@ -271,9 +275,9 @@ const ClientFilesLinks = () => {
                     {item.name}
                   </p>
                   <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                    {item.type === 'FILE'
-                      ? `${formatBytes(item.size)} • ${item.mimeType || 'File'}`
-                      : 'Link'}
+                    {item.type === "FILE"
+                      ? `${formatBytes(item.size)} • ${item.mimeType || "File"}`
+                      : "Link"}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
