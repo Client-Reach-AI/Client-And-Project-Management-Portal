@@ -49,6 +49,8 @@ const getServiceLabel = (serviceType) => {
   }
 };
 
+const getServiceAccent = () => 'bg-zinc-300 dark:bg-zinc-700';
+
 const buildServiceSummary = (payload = {}) => {
   const serviceType = payload.service_type;
   const responses = payload.service_responses || {};
@@ -128,6 +130,16 @@ const Clients = () => {
     () => intakes.filter((item) => item.status === 'SUBMITTED'),
     [intakes]
   );
+
+  const activeClientCount = useMemo(
+    () => clients.filter((client) => client.status === 'ACTIVE').length,
+    [clients]
+  );
+  const inactiveClientCount = useMemo(
+    () => clients.filter((client) => client.status === 'INACTIVE').length,
+    [clients]
+  );
+  const intakeCount = intakeList.length;
 
   const filteredClients = useMemo(() => {
     const normalized = searchQuery.trim().toLowerCase();
@@ -246,6 +258,7 @@ const Clients = () => {
         toast.success('Public intake link ready');
       }
     } catch (error) {
+      console.error('Clipboard error:', error);
       toast.error('Failed to copy public intake link');
     }
   };
@@ -339,6 +352,7 @@ const Clients = () => {
     INACTIVE:
       'bg-zinc-200 text-zinc-700 dark:bg-zinc-700/40 dark:text-zinc-300',
   };
+
   if (!isAdmin) {
     return (
       <div className="p-6 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-200">
@@ -354,10 +368,10 @@ const Clients = () => {
     <div className="space-y-6 max-w-6xl mx-auto">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
+          <h1 className="text-xl sm:text-2xl font-semibold text-zinc-900 dark:text-white">
             Clients
           </h1>
-          <p className="text-sm text-gray-500 dark:text-zinc-400">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
             Manage client profiles and intake requests from your team or direct
             client submissions.
           </p>
@@ -385,6 +399,29 @@ const Clients = () => {
             <Plus className="size-4" /> New Client
           </button>
         </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        {[
+          { label: 'Total clients', value: clients.length },
+          {
+            label: 'Active / Inactive',
+            value: `${activeClientCount} / ${inactiveClientCount}`,
+          },
+          { label: 'New intakes', value: intakeCount },
+        ].map((stat) => (
+          <div
+            key={stat.label}
+            className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 py-3"
+          >
+            <p className="text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
+              {stat.label}
+            </p>
+            <p className="mt-2 text-lg font-semibold text-zinc-900 dark:text-white">
+              {stat.value}
+            </p>
+          </div>
+        ))}
       </div>
 
       {isCreateOpen && (
@@ -642,157 +679,191 @@ const Clients = () => {
               <option value="company-desc">Company (Z-A)</option>
             </select>
           </div>
-          {(statusFilter !== 'ALL' || sortBy !== 'name-asc') && (
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="flex items-center justify-center gap-1 px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm w-full sm:w-auto shadow-sm"
-            >
-              <X className="size-3" /> Clear
-            </button>
-          )}
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="text-xs text-zinc-500 dark:text-zinc-400">
+              Showing{' '}
+              <span className="text-zinc-900 dark:text-white font-semibold">
+                {filteredClients.length}
+              </span>{' '}
+              clients
+            </div>
+            {(statusFilter !== 'ALL' || sortBy !== 'name-asc') && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="flex items-center justify-center gap-1 px-3 py-2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm shadow-sm"
+              >
+                <X className="size-3" /> Clear
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredClients.map((client) => (
-          <div
-            key={client.id}
-            className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-2 min-w-0"
-          >
-            {(() => {
-              const projectCount = projectCounts.get(client.id) || 0;
-              const uploadedFiles =
-                client.uploadedFiles?.length ||
-                client.details?.uploadedFiles?.length ||
-                0;
-
-              return (
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
-                      {client.name}
-                    </h3>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                      {client.company || client.industry || 'Client'}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={`text-[10px] px-2 py-1 rounded-full ${
-                        statusStyles[client.status] || statusStyles.ACTIVE
-                      }`}
-                    >
-                      {client.status || 'ACTIVE'}
-                    </span>
-                    {client.details?.source === 'PUBLIC' && (
-                      <span className="text-[10px] px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">
-                        Client-submitted
-                      </span>
-                    )}
-                    {client.details?.source === 'INTAKE' && (
-                      <span className="text-[10px] px-2 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
-                        Intake link
-                      </span>
-                    )}
-                    <span className="text-[10px] px-2 py-1 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
-                      {projectCount} projects
-                    </span>
-                    <span className="text-[10px] px-2 py-1 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
-                      {uploadedFiles} files
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => openClientDetails(client)}
-                      className="text-xs px-3 py-1 rounded border border-zinc-300 dark:border-zinc-700 w-full sm:w-auto"
-                    >
-                      View Details
-                    </button>
-                  </div>
-                </div>
-              );
-            })()}
-            <div className="text-xs text-zinc-500 dark:text-zinc-400 space-y-1 break-words">
-              {client.email && (
-                <div className="break-words">Email: {client.email}</div>
-              )}
-              {client.phone && (
-                <div className="break-words">Phone: {client.phone}</div>
-              )}
-              {client.website && (
-                <div className="break-words">Website: {client.website}</div>
-              )}
-            </div>
+        {filteredClients.length === 0 && (
+          <div className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 text-sm text-zinc-500 dark:text-zinc-400">
+            No clients match the current filters.
           </div>
-        ))}
+        )}
+        {filteredClients.map((client) => {
+          const projectCount = projectCounts.get(client.id) || 0;
+          const uploadedFiles =
+            client.uploadedFiles?.length ||
+            client.details?.uploadedFiles?.length ||
+            0;
+          const sourceLabel =
+            client.details?.source === 'PUBLIC'
+              ? 'Client-submitted'
+              : client.details?.source === 'INTAKE'
+                ? 'Intake link'
+                : client.details?.source === 'MANUAL'
+                  ? 'Manual entry'
+                  : null;
+
+          return (
+            <div
+              key={client.id}
+              className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-2 min-w-0"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
+                    {client.name}
+                  </h3>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    {client.company || client.industry || 'Client'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => openClientDetails(client)}
+                  className="text-xs px-3 py-1 rounded border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-200 whitespace-nowrap"
+                >
+                  View Details
+                </button>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`text-[10px] hidden px-2.5 py-1 rounded-full ${
+                    statusStyles[client.status] || statusStyles.ACTIVE
+                  }`}
+                >
+                  {client.status || 'ACTIVE'}
+                </span>
+                {sourceLabel && (
+                  <span className="text-[10px] px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+                    {sourceLabel}
+                  </span>
+                )}
+                <span className="text-[10px] px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+                  {projectCount} projects
+                </span>
+                <span className="text-[10px] px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+                  {uploadedFiles} files
+                </span>
+              </div>
+
+              <div className="text-xs text-zinc-600 dark:text-zinc-400 space-y-1 break-words">
+                {client.email && <div>Email: {client.email}</div>}
+                {client.phone && <div>Phone: {client.phone}</div>}
+                {client.website && <div>Website: {client.website}</div>}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
-          Client Intake Submissions
-        </h2>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
-          Review client responses and create a project.
-        </p>
+      <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
+              Client Intake Submissions
+            </h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
+              Review client responses and create a project.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs px-3 py-1 rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+              {intakeCount} pending
+            </span>
+          </div>
+        </div>
         {intakeList.length === 0 ? (
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             No submissions yet.
           </p>
         ) : (
           <div className="space-y-3">
-            {intakeList.map((intake) => (
-              <div
-                key={intake.id}
-                className="border border-zinc-200 dark:border-zinc-800 rounded-md p-4"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-zinc-900 dark:text-white">
-                      {getIntakeDisplayName(intake.payload)}
-                    </p>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                      Submitted on{' '}
-                      {intake.submittedAt
-                        ? new Date(intake.submittedAt).toLocaleDateString()
-                        : 'N/A'}
-                    </p>
+            {intakeList.map((intake) => {
+              const hasProject =
+                intake.clientId &&
+                (projectCounts.get(intake.clientId) || 0) > 0;
+              return (
+                <div
+                  key={intake.id}
+                  className="relative overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4"
+                >
+                  <div
+                    className={`absolute left-0 top-0 h-full w-1 ${getServiceAccent(
+                      intake.payload?.service_type
+                    )}`}
+                  />
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pl-3">
+                    <div>
+                      <p className="text-sm font-semibold text-zinc-900 dark:text-white">
+                        {getIntakeDisplayName(intake.payload)}
+                      </p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                        Submitted on{' '}
+                        {intake.submittedAt
+                          ? new Date(intake.submittedAt).toLocaleDateString()
+                          : 'N/A'}
+                      </p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <button
+                        type="button"
+                        onClick={() => openDetails(intake)}
+                        className="text-xs px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 w-full sm:w-auto"
+                      >
+                        View Details
+                      </button>
+                      {!hasProject && (
+                        <button
+                          type="button"
+                          onClick={() => openProjectFromIntake(intake)}
+                          className="text-xs px-3 py-2 rounded bg-linear-to-br from-blue-500 to-blue-600 text-white w-full sm:w-auto"
+                        >
+                          Create Project
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <button
-                      type="button"
-                      onClick={() => openDetails(intake)}
-                      className="text-xs px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 w-full sm:w-auto"
-                    >
-                      View Details
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => openProjectFromIntake(intake)}
-                      className="text-xs px-3 py-2 rounded bg-linear-to-br from-blue-500 to-blue-600 text-white w-full sm:w-auto"
-                    >
-                      Create Project
-                    </button>
+                  <div className="mt-3 text-xs text-zinc-600 dark:text-zinc-400 space-y-1 pl-3">
+                    {intake.payload?.service_type && (
+                      <div>
+                        Service: {getServiceLabel(intake.payload.service_type)}
+                      </div>
+                    )}
+                    {intake.payload?.business_details?.launch_date && (
+                      <div>
+                        Launch Date:{' '}
+                        {intake.payload.business_details.launch_date}
+                      </div>
+                    )}
+                    {intake.payload?.business_details?.problem_solving && (
+                      <div>
+                        Problem:{' '}
+                        {intake.payload.business_details.problem_solving}
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="mt-3 text-xs text-zinc-600 dark:text-zinc-400 space-y-1">
-                  {intake.payload?.service_type && (
-                    <div>
-                      Service: {getServiceLabel(intake.payload.service_type)}
-                    </div>
-                  )}
-                  {intake.payload?.business_details?.launch_date && (
-                    <div>
-                      Launch Date: {intake.payload.business_details.launch_date}
-                    </div>
-                  )}
-                  {intake.payload?.business_details?.problem_solving && (
-                    <div>
-                      Problem: {intake.payload.business_details.problem_solving}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -816,106 +887,114 @@ const Clients = () => {
 
       {selectedDetails && (
         <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex justify-end">
-          <div className="bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 w-full max-w-lg h-full p-6 overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
-                  Intake Details
-                </h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {getIntakeDisplayName(selectedDetails.payload)}
-                </p>
+          <div className="bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 w-full max-w-lg h-full overflow-y-auto">
+            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
+                    Intake Details
+                  </h3>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                    {getIntakeDisplayName(selectedDetails.payload)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedDetails(null)}
+                  className="text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                >
+                  <X className="size-4" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectedDetails(null)}
-                className="text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
-              >
-                <X className="size-4" />
-              </button>
             </div>
 
-            <div className="space-y-4 text-sm text-zinc-600 dark:text-zinc-300">
-              <div>
-                <p className="font-medium text-zinc-900 dark:text-zinc-100">
+            <div className="p-6 space-y-6 text-sm text-zinc-600 dark:text-zinc-300">
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
                   Contact
                 </p>
-                <p>
-                  Name:{' '}
-                  {selectedDetails.payload?.contact_name ||
-                    selectedDetails.payload?.clientName ||
-                    'N/A'}
-                </p>
-                <p>
-                  Company:{' '}
-                  {selectedDetails.payload?.company_name ||
-                    selectedDetails.payload?.company ||
-                    'N/A'}
-                </p>
-                <p>Role: {selectedDetails.payload?.contact_role || 'N/A'}</p>
-                <p>Email: {selectedDetails.payload?.email || 'N/A'}</p>
-                <p>Phone: {selectedDetails.payload?.phone || 'N/A'}</p>
-                <p>
-                  Website:{' '}
-                  {selectedDetails.payload?.company_website ||
-                    selectedDetails.payload?.website ||
-                    selectedDetails.payload?.service_responses?.current_url ||
-                    'N/A'}
-                </p>
-                <p>Industry: {selectedDetails.payload?.industry || 'N/A'}</p>
+                <div className="space-y-1">
+                  <p>
+                    Name:{' '}
+                    {selectedDetails.payload?.contact_name ||
+                      selectedDetails.payload?.clientName ||
+                      'N/A'}
+                  </p>
+                  <p>
+                    Company:{' '}
+                    {selectedDetails.payload?.company_name ||
+                      selectedDetails.payload?.company ||
+                      'N/A'}
+                  </p>
+                  <p>Role: {selectedDetails.payload?.contact_role || 'N/A'}</p>
+                  <p>Email: {selectedDetails.payload?.email || 'N/A'}</p>
+                  <p>Phone: {selectedDetails.payload?.phone || 'N/A'}</p>
+                  <p>
+                    Website:{' '}
+                    {selectedDetails.payload?.company_website ||
+                      selectedDetails.payload?.website ||
+                      selectedDetails.payload?.service_responses?.current_url ||
+                      'N/A'}
+                  </p>
+                  <p>Industry: {selectedDetails.payload?.industry || 'N/A'}</p>
+                </div>
               </div>
-              <div>
-                <p className="font-medium text-zinc-900 dark:text-zinc-100">
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
                   Business Details
                 </p>
-                <p>
-                  Problem:{' '}
-                  {selectedDetails.payload?.business_details?.problem_solving ||
-                    'N/A'}
-                </p>
-                <p>
-                  90-Day Success:{' '}
-                  {selectedDetails.payload?.business_details?.success_90_days ||
-                    'N/A'}
-                </p>
-                <p>
-                  Launch Date:{' '}
-                  {selectedDetails.payload?.business_details?.launch_date ||
-                    'N/A'}
-                </p>
-                <p>
-                  Biggest Concern:{' '}
-                  {selectedDetails.payload?.business_details?.biggest_concern ||
-                    'N/A'}
-                </p>
+                <div className="space-y-1">
+                  <p>
+                    Problem:{' '}
+                    {selectedDetails.payload?.business_details
+                      ?.problem_solving || 'N/A'}
+                  </p>
+                  <p>
+                    90-Day Success:{' '}
+                    {selectedDetails.payload?.business_details
+                      ?.success_90_days || 'N/A'}
+                  </p>
+                  <p>
+                    Launch Date:{' '}
+                    {selectedDetails.payload?.business_details?.launch_date ||
+                      'N/A'}
+                  </p>
+                  <p>
+                    Biggest Concern:{' '}
+                    {selectedDetails.payload?.business_details
+                      ?.biggest_concern || 'N/A'}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="font-medium text-zinc-900 dark:text-zinc-100">
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
                   Service Requirements
                 </p>
-                <p>
-                  Service:{' '}
-                  {selectedDetails.payload?.service_type
-                    ? getServiceLabel(selectedDetails.payload.service_type)
-                    : 'N/A'}
-                </p>
-                <p>
-                  Details:{' '}
-                  <span className="whitespace-pre-line">
-                    {buildServiceSummary(selectedDetails.payload) || 'N/A'}
-                  </span>
-                </p>
+                <div className="space-y-1">
+                  <p>
+                    Service:{' '}
+                    {selectedDetails.payload?.service_type
+                      ? getServiceLabel(selectedDetails.payload.service_type)
+                      : 'N/A'}
+                  </p>
+                  <p>
+                    Details:{' '}
+                    <span className="whitespace-pre-line">
+                      {buildServiceSummary(selectedDetails.payload) || 'N/A'}
+                    </span>
+                  </p>
+                </div>
               </div>
             </div>
 
-            <div className="mt-6 flex gap-2">
+            <div className="px-6 pb-6">
               <button
                 type="button"
                 onClick={() => {
                   setSelectedDetails(null);
                   openProjectFromIntake(selectedDetails);
                 }}
-                className="flex-1 px-4 py-2 rounded bg-linear-to-br from-blue-500 to-blue-600 text-white text-sm"
+                className="w-full px-4 py-2 rounded bg-linear-to-br from-blue-500 to-blue-600 text-white text-sm"
               >
                 Create Project
               </button>
