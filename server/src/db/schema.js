@@ -180,6 +180,20 @@ export const comments = pgTable('comments', {
     .notNull(),
 });
 
+export const messages = pgTable('messages', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id')
+    .notNull()
+    .references(() => workspaces.id),
+  senderId: text('sender_id')
+    .notNull()
+    .references(() => users.id),
+  body: text('body').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
 export const invitations = pgTable('invitations', {
   id: text('id').primaryKey(),
   email: text('email').notNull(),

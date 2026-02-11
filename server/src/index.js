@@ -10,6 +10,7 @@ import invitationsRouter from './routes/invitations.js';
 import clientsRouter from './routes/clients.js';
 import clientIntakesRouter from './routes/clientIntakes.js';
 import filesRouter from './routes/files.js';
+import messagesRouter from './routes/messages.js';
 import { requireAuth } from './middleware/auth.js';
 
 const app = express();
@@ -41,6 +42,7 @@ app.use('/api/clients', clientsRouter);
 app.use('/api/projects', projectsRouter);
 app.use('/api/tasks', tasksRouter);
 app.use('/api/files', filesRouter);
+app.use('/api/messages', messagesRouter);
 
 app.use((err, req, res, next) => {
   console.error(err);

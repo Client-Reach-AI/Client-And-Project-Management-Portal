@@ -10,6 +10,7 @@ import {
   fetchClientIntakes,
   lookupClientIntake,
   fetchSharedFiles,
+  fetchMessages,
 } from '../api';
 import {
   clientKeys,
@@ -18,6 +19,7 @@ import {
   taskKeys,
   workspaceKeys,
   fileKeys,
+  messageKeys,
 } from './queryKeys';
 
 export const useWorkspaces = (options = {}) =>
@@ -101,5 +103,14 @@ export const useSharedFiles = (
     queryKey: fileKeys.list(workspaceId, clientId, projectId),
     queryFn: () => fetchSharedFiles({ workspaceId, clientId, projectId }),
     enabled: Boolean(workspaceId),
+    ...options,
+  });
+
+export const useMessages = (workspaceId, options = {}) =>
+  useQuery({
+    queryKey: messageKeys.list(workspaceId),
+    queryFn: () => fetchMessages(workspaceId),
+    enabled: Boolean(workspaceId),
+    refetchInterval: 8000,
     ...options,
   });

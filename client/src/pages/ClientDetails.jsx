@@ -9,6 +9,7 @@ import { ArrowLeftIcon, Link as LinkIcon } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { useWorkspaceContext } from '../context/workspaceContext';
 import { useClients, useSharedFiles } from '../hooks/useQueries';
+import MessageThread from '../components/MessageThread';
 
 const tabs = [
   { id: 'summary', label: 'Summary' },
@@ -322,11 +323,10 @@ const ClientDetails = () => {
       )}
 
       {activeTab === 'messages' && (
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Messages are coming soon. Use project notes for now.
-          </p>
-        </div>
+        <MessageThread
+          workspaceId={client.portalWorkspaceId}
+          emptyMessage="No client messages yet."
+        />
       )}
 
       {client.portalWorkspaceId && (

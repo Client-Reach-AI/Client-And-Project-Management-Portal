@@ -12,6 +12,7 @@ import {
   projectMembers,
   tasks,
   comments,
+  messages,
   invitations,
   sharedFiles,
 } from './db/schema.js';
@@ -20,6 +21,7 @@ const run = async () => {
   const adminPasswordHash = await bcrypt.hash('admin@1234', 10);
 
   await db.delete(comments);
+  await db.delete(messages);
   await db.delete(tasks);
   await db.delete(projectMembers);
   await db.delete(invitations);

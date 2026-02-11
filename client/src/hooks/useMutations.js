@@ -25,6 +25,7 @@ import {
   createProjectClientInvite,
   createSharedFile,
   createFileSignature,
+  createMessage,
 } from '../api';
 import {
   clientKeys,
@@ -33,6 +34,7 @@ import {
   taskKeys,
   workspaceKeys,
   fileKeys,
+  messageKeys,
 } from './queryKeys';
 
 export const useCreateWorkspace = () => {
@@ -254,6 +256,18 @@ export const useCreateFileSignature = () =>
   useMutation({
     mutationFn: createFileSignature,
   });
+
+export const useCreateMessage = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createMessage,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: messageKeys.list(variables.workspaceId),
+      });
+    },
+  });
+};
 
 export const useAcceptInvitation = () => {
   const queryClient = useQueryClient();

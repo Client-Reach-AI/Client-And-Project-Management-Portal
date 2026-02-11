@@ -183,3 +183,12 @@ export const createFileSignature = async (payload) =>
     method: 'POST',
     body: JSON.stringify(payload),
   });
+
+export const fetchMessages = async (workspaceId) =>
+  apiFetch(`/api/messages?workspaceId=${encodeURIComponent(workspaceId)}`);
+
+export const createMessage = async (payload) =>
+  apiFetch('/api/messages', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });

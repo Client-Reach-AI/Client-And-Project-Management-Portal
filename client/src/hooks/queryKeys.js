@@ -30,3 +30,7 @@ export const fileKeys = {
     projectId || null,
   ],
 };
+
+export const messageKeys = {
+  list: (workspaceId) => ['messages', workspaceId],
+};
