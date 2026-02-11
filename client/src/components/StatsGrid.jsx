@@ -1,4 +1,10 @@
-import { FolderOpen, CheckCircle, Users, AlertTriangle } from 'lucide-react';
+import {
+  FolderOpen,
+  CheckCircle,
+  Users,
+  AlertTriangle,
+  ClipboardCheck,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useWorkspaceContext } from '../context/workspaceContext';
@@ -9,6 +15,7 @@ export default function StatsGrid() {
 
   const [stats, setStats] = useState({
     totalProjects: 0,
+    totalClients: 0,
     activeProjects: 0,
     completedProjects: 0,
     myTasks: 0,
@@ -16,6 +23,14 @@ export default function StatsGrid() {
   });
 
   const statCards = [
+    {
+      icon: Users,
+      title: 'Total Clients',
+      value: stats.totalClients,
+      subtitle: 'managed clients',
+      bgColor: 'bg-indigo-500/10',
+      textColor: 'text-indigo-500',
+    },
     {
       icon: FolderOpen,
       title: 'Total Projects',
@@ -33,7 +48,7 @@ export default function StatsGrid() {
       textColor: 'text-emerald-500',
     },
     {
-      icon: Users,
+      icon: ClipboardCheck,
       title: 'My Tasks',
       value: stats.myTasks,
       subtitle: 'assigned to me',
@@ -54,6 +69,7 @@ export default function StatsGrid() {
     if (currentWorkspace) {
       setStats({
         totalProjects: currentWorkspace.projects.length,
+        totalClients: currentWorkspace.clients?.length || 0,
         activeProjects: currentWorkspace.projects.filter(
           (p) => p.status !== 'CANCELLED' && p.status !== 'COMPLETED'
         ).length,
@@ -81,7 +97,7 @@ export default function StatsGrid() {
   }, [currentWorkspace, user]);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 my-6 sm:my-9">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 my-6 sm:my-9">
       {statCards.map((card, i) => (
         <div
           key={i}
