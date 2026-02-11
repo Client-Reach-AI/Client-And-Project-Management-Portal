@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
+import { sql } from 'drizzle-orm';
 import { db } from './db/index.js';
 import {
   users,
@@ -22,10 +23,24 @@ const run = async () => {
   await db.delete(tasks);
   await db.delete(projectMembers);
   await db.delete(invitations);
-  await db.delete(projects);
-  await db.delete(clientIntakes);
-  await db.delete(clients);
   await db.delete(sharedFiles);
+  await db.delete(clientIntakes);
+  await db.execute(sql`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+          AND table_name = 'requests'
+      ) THEN
+        DELETE FROM requests;
+      END IF;
+    END $$;
+  `);
+  await db.update(clients).set({ portalProjectId: null });
+  await db.delete(projects);
+  await db.delete(clients);
   await db.delete(workspaceMembers);
   await db.delete(workspaces);
   await db.delete(users);
@@ -43,71 +58,40 @@ const run = async () => {
 
   await db.insert(workspaces).values([
     {
-      id: 'org_core',
-      name: 'Client Reach AI - Core Platform',
-      slug: 'client-reach-core',
-      description: 'Core product roadmap and delivery for Client Reach AI.',
-      settings: { theme: 'midnight' },
+      id: 'workspace_1',
+      name: 'Workspace 1',
+      slug: 'workspace-1',
+      description: null,
+      settings: {},
       ownerId: 'user_admin',
       image_url: null,
     },
     {
-      id: 'org_marketing',
-      name: 'Client Reach AI - Marketing',
-      slug: 'client-reach-marketing',
-      description: 'Marketing campaigns, web presence, and growth experiments.',
-      settings: { theme: 'sunrise' },
+      id: 'workspace_2',
+      name: 'Workspace 2',
+      slug: 'workspace-2',
+      description: null,
+      settings: {},
       ownerId: 'user_admin',
       image_url: null,
     },
     {
-      id: 'org_delivery',
-      name: 'Client Reach AI - Client Delivery',
-      slug: 'client-reach-delivery',
-      description: 'Client projects across mobile apps, web, and AI workflows.',
-      settings: { theme: 'forest' },
+      id: 'workspace_3',
+      name: 'Workspace 3',
+      slug: 'workspace-3',
+      description: null,
+      settings: {},
       ownerId: 'user_admin',
       image_url: null,
     },
     {
-      id: 'org_internal',
-      name: 'Client Reach AI - Internal Ops',
-      slug: 'client-reach-ops',
-      description: 'Internal automation, IT, and operational tooling.',
-      settings: { theme: 'marine' },
+      id: 'workspace_4',
+      name: 'Workspace 4',
+      slug: 'workspace-4',
+      description: null,
+      settings: {},
       ownerId: 'user_admin',
       image_url: null,
-    },
-  ]);
-
-  await db.insert(workspaceMembers).values([
-    {
-      id: 'wm_core_admin',
-      workspaceId: 'org_core',
-      userId: 'user_admin',
-      role: 'ADMIN',
-      message: 'Workspace owner',
-    },
-    {
-      id: 'wm_marketing_admin',
-      workspaceId: 'org_marketing',
-      userId: 'user_admin',
-      role: 'ADMIN',
-      message: 'Workspace owner',
-    },
-    {
-      id: 'wm_delivery_admin',
-      workspaceId: 'org_delivery',
-      userId: 'user_admin',
-      role: 'ADMIN',
-      message: 'Workspace owner',
-    },
-    {
-      id: 'wm_internal_admin',
-      workspaceId: 'org_internal',
-      userId: 'user_admin',
-      role: 'ADMIN',
-      message: 'Workspace owner',
     },
   ]);
 };
