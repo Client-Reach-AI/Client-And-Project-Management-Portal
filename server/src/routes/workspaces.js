@@ -180,6 +180,17 @@ router.get('/', async (req, res, next) => {
   try {
     if (req.user.role === 'ADMIN') {
       const workspaceList = await db.select().from(workspaces);
+      const visibleWorkspaces = workspaceList.filter((workspace) => {
+        const settings = workspace.settings || {};
+        if (settings.isClientPortal) return false;
+        if (
+          workspace.description &&
+          workspace.description.startsWith('Client portal for ')
+        ) {
+          return false;
+        }
+        return true;
+      });
       const workspaceIds = workspaceList.map((w) => w.id);
       const memberList = workspaceIds.length
         ? await db
@@ -194,7 +205,7 @@ router.get('/', async (req, res, next) => {
       }, {});
 
       return res.json(
-        workspaceList.map((workspace) => ({
+        visibleWorkspaces.map((workspace) => ({
           ...workspace,
           memberCount: memberCounts[workspace.id] || 0,
         }))

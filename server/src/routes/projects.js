@@ -71,6 +71,11 @@ const ensureClientPortal = async ({ client, sourceProject, ownerId }) => {
       name: workspaceName,
       slug,
       description: `Client portal for ${client.name || client.company || 'Client'}.`,
+      settings: {
+        isClientPortal: true,
+        sourceWorkspaceId: sourceProject.workspaceId,
+        clientId: client.id,
+      },
       ownerId,
       updatedAt: new Date(),
     });
