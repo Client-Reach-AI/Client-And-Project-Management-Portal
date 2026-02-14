@@ -26,6 +26,9 @@ import {
   createSharedFile,
   createFileSignature,
   createMessage,
+  createInvoice,
+  updateInvoice,
+  createInvoiceCheckoutSession,
 } from '../api';
 import {
   clientKeys,
@@ -35,6 +38,7 @@ import {
   workspaceKeys,
   fileKeys,
   messageKeys,
+  invoiceKeys,
 } from './queryKeys';
 
 export const useCreateWorkspace = () => {
@@ -387,4 +391,51 @@ export const useCreateClientIntake = () => {
 export const useSubmitClientIntake = () =>
   useMutation({
     mutationFn: submitClientIntake,
+  });
+
+export const useCreateInvoice = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createInvoice,
+    onSuccess: (created) => {
+      if (created?.workspaceId) {
+        queryClient.invalidateQueries({
+          queryKey: invoiceKeys.listByWorkspace(created.workspaceId),
+        });
+      }
+      if (created?.clientId) {
+        queryClient.invalidateQueries({
+          queryKey: invoiceKeys.listByClient(created.clientId),
+        });
+      }
+    },
+  });
+};
+
+export const useUpdateInvoice = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ invoiceId, payload }) => updateInvoice(invoiceId, payload),
+    onSuccess: (updated) => {
+      if (!updated?.id) return;
+      queryClient.invalidateQueries({
+        queryKey: invoiceKeys.detail(updated.id),
+      });
+      if (updated.workspaceId) {
+        queryClient.invalidateQueries({
+          queryKey: invoiceKeys.listByWorkspace(updated.workspaceId),
+        });
+      }
+      if (updated.clientId) {
+        queryClient.invalidateQueries({
+          queryKey: invoiceKeys.listByClient(updated.clientId),
+        });
+      }
+    },
+  });
+};
+
+export const useCreateInvoiceCheckoutSession = () =>
+  useMutation({
+    mutationFn: ({ invoiceId }) => createInvoiceCheckoutSession(invoiceId),
   });

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Link,
   useNavigate,
@@ -7,8 +7,10 @@ import {
 } from 'react-router-dom';
 import { ArrowLeftIcon, Link as LinkIcon } from 'lucide-react';
 import { useSelector } from 'react-redux';
+import toast from 'react-hot-toast';
 import { useWorkspaceContext } from '../context/workspaceContext';
-import { useClients, useSharedFiles } from '../hooks/useQueries';
+import { useClients, useInvoicesByClient, useSharedFiles } from '../hooks/useQueries';
+import { useCreateInvoice, useUpdateInvoice } from '../hooks/useMutations';
 import MessageThread from '../components/MessageThread';
 
 const tabs = [
@@ -66,6 +68,30 @@ const buildDownloadUrl = (item) => {
     : url;
 };
 
+const invoiceStatusStyles = {
+  DRAFT:
+    'bg-zinc-100 text-zinc-700 dark:bg-zinc-700/30 dark:text-zinc-200',
+  SENT:
+    'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200',
+  PARTIALLY_PAID:
+    'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200',
+  PAID: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200',
+  VOID: 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-200',
+};
+
+const formatCurrency = (amountCents, currency = 'USD') =>
+  new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+  }).format((Number(amountCents || 0) || 0) / 100);
+
+const formatShortDate = (value) => {
+  if (!value) return 'N/A';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'N/A';
+  return date.toLocaleDateString();
+};
+
 const ClientDetails = () => {
   const { currentWorkspace } = useWorkspaceContext();
   const { id } = useParams();
@@ -93,6 +119,20 @@ const ClientDetails = () => {
     },
     { enabled: Boolean(workspaceId && client?.id) }
   );
+  const { data: invoiceList = [], isLoading: invoicesLoading } =
+    useInvoicesByClient(client?.id, {
+      enabled: Boolean(client?.id && isAdmin),
+      refetchInterval: 15000,
+    });
+  const createInvoiceMutation = useCreateInvoice();
+  const updateInvoiceMutation = useUpdateInvoice();
+  const [invoiceDraft, setInvoiceDraft] = useState({
+    title: '',
+    description: '',
+    amount: '',
+    dueDate: '',
+    status: 'SENT',
+  });
 
   const projectCount = useMemo(() => {
     if (!client) return 0;
@@ -132,6 +172,42 @@ const ClientDetails = () => {
       </div>
     );
   }
+
+  const onCreateInvoice = async (event) => {
+    event.preventDefault();
+    try {
+      await createInvoiceMutation.mutateAsync({
+        clientId: client.id,
+        title: invoiceDraft.title,
+        description: invoiceDraft.description || null,
+        amount: Number(invoiceDraft.amount),
+        dueDate: invoiceDraft.dueDate || null,
+        status: invoiceDraft.status,
+      });
+      setInvoiceDraft({
+        title: '',
+        description: '',
+        amount: '',
+        dueDate: '',
+        status: 'SENT',
+      });
+      toast.success('Invoice created');
+    } catch (error) {
+      toast.error(error.message || 'Could not create invoice');
+    }
+  };
+
+  const onMarkPaid = async (invoiceId) => {
+    try {
+      await updateInvoiceMutation.mutateAsync({
+        invoiceId,
+        payload: { status: 'PAID' },
+      });
+      toast.success('Invoice marked as paid');
+    } catch (error) {
+      toast.error(error.message || 'Could not update invoice');
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -315,10 +391,190 @@ const ClientDetails = () => {
       )}
 
       {activeTab === 'invoices' && (
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Invoices are a placeholder for now. We will wire billing later.
-          </p>
+        <div className="space-y-5">
+          <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6">
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-4">
+              Create Invoice
+            </h3>
+            <form
+              onSubmit={onCreateInvoice}
+              className="grid sm:grid-cols-2 gap-3 items-end"
+            >
+              <label className="space-y-1">
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Title
+                </span>
+                <input
+                  type="text"
+                  required
+                  value={invoiceDraft.title}
+                  onChange={(e) =>
+                    setInvoiceDraft((prev) => ({
+                      ...prev,
+                      title: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm"
+                  placeholder="Phase 1 delivery"
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Amount (USD)
+                </span>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  required
+                  value={invoiceDraft.amount}
+                  onChange={(e) =>
+                    setInvoiceDraft((prev) => ({
+                      ...prev,
+                      amount: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm"
+                  placeholder="2500"
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Due Date
+                </span>
+                <input
+                  type="date"
+                  value={invoiceDraft.dueDate}
+                  onChange={(e) =>
+                    setInvoiceDraft((prev) => ({
+                      ...prev,
+                      dueDate: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm"
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Status
+                </span>
+                <select
+                  value={invoiceDraft.status}
+                  onChange={(e) =>
+                    setInvoiceDraft((prev) => ({
+                      ...prev,
+                      status: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm"
+                >
+                  <option value="DRAFT">DRAFT</option>
+                  <option value="SENT">SENT</option>
+                </select>
+              </label>
+              <label className="space-y-1 sm:col-span-2">
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Description
+                </span>
+                <textarea
+                  rows={3}
+                  value={invoiceDraft.description}
+                  onChange={(e) =>
+                    setInvoiceDraft((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm"
+                  placeholder="Optional notes for this invoice"
+                />
+              </label>
+              <div className="sm:col-span-2">
+                <button
+                  type="submit"
+                  disabled={createInvoiceMutation.isPending}
+                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm disabled:opacity-60"
+                >
+                  {createInvoiceMutation.isPending
+                    ? 'Creating...'
+                    : 'Create Invoice'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6">
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-4">
+              Invoice History
+            </h3>
+            {invoicesLoading ? (
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                Loading invoices...
+              </p>
+            ) : !invoiceList.length ? (
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                No invoices yet for this client.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs uppercase tracking-[0.2em] text-zinc-500">
+                      <th className="pb-3">Invoice</th>
+                      <th className="pb-3">Title</th>
+                      <th className="pb-3">Amount</th>
+                      <th className="pb-3">Due</th>
+                      <th className="pb-3">Status</th>
+                      <th className="pb-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                    {invoiceList.map((invoice) => (
+                      <tr key={invoice.id}>
+                        <td className="py-3 text-zinc-900 dark:text-zinc-100">
+                          {invoice.invoiceNumber}
+                        </td>
+                        <td className="py-3 text-zinc-600 dark:text-zinc-300">
+                          {invoice.title}
+                        </td>
+                        <td className="py-3 text-zinc-600 dark:text-zinc-300">
+                          {formatCurrency(invoice.amountCents, invoice.currency)}
+                        </td>
+                        <td className="py-3 text-zinc-600 dark:text-zinc-300">
+                          {formatShortDate(invoice.dueDate)}
+                        </td>
+                        <td className="py-3">
+                          <span
+                            className={`text-xs px-2 py-1 rounded-full ${
+                              invoiceStatusStyles[invoice.status] ||
+                              invoiceStatusStyles.SENT
+                            }`}
+                          >
+                            {invoice.status}
+                          </span>
+                        </td>
+                        <td className="py-3 text-right">
+                          {invoice.status !== 'PAID' && invoice.status !== 'VOID' ? (
+                            <button
+                              type="button"
+                              onClick={() => onMarkPaid(invoice.id)}
+                              className="text-xs px-3 py-1.5 rounded-md border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                            >
+                              Mark Paid
+                            </button>
+                          ) : (
+                            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                              -
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

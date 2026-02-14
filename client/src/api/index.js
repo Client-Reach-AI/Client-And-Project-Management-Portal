@@ -192,3 +192,30 @@ export const createMessage = async (payload) =>
     method: 'POST',
     body: JSON.stringify(payload),
   });
+
+export const fetchInvoices = async ({ workspaceId, clientId } = {}) => {
+  const params = new URLSearchParams();
+  if (workspaceId) params.set('workspaceId', workspaceId);
+  if (clientId) params.set('clientId', clientId);
+  return apiFetch(`/api/invoices?${params.toString()}`);
+};
+
+export const fetchInvoiceById = async (invoiceId) =>
+  apiFetch(`/api/invoices/${invoiceId}`);
+
+export const createInvoice = async (payload) =>
+  apiFetch('/api/invoices', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
+export const updateInvoice = async (invoiceId, payload) =>
+  apiFetch(`/api/invoices/${invoiceId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+
+export const createInvoiceCheckoutSession = async (invoiceId) =>
+  apiFetch(`/api/invoices/${invoiceId}/checkout-session`, {
+    method: 'POST',
+  });
