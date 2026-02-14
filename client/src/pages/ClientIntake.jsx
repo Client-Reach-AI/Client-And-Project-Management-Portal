@@ -322,10 +322,10 @@ const BusinessDetails = ({ data, updateData, onNext, onBack }) => {
 
         <div>
           <label className="block text-sm font-medium text-gray-400 mb-2">
-            Company Website
+            Company Website (Optional)
           </label>
           <input
-            type="url"
+            type="text"
             placeholder="https://yourcompany.com"
             className={inputClassName}
             value={data.company_website || ''}
