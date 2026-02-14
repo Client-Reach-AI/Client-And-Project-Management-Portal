@@ -11,6 +11,8 @@ import clientsRouter from './routes/clients.js';
 import clientIntakesRouter from './routes/clientIntakes.js';
 import filesRouter from './routes/files.js';
 import messagesRouter from './routes/messages.js';
+import invoicesRouter from './routes/invoices.js';
+import stripeRouter from './routes/stripe.js';
 import { requireAuth } from './middleware/auth.js';
 
 const app = express();
@@ -25,6 +27,8 @@ app.use(
 );
 
 app.options('*', cors());
+
+app.use('/api/stripe', stripeRouter);
 
 app.use(express.json());
 
@@ -43,6 +47,7 @@ app.use('/api/projects', projectsRouter);
 app.use('/api/tasks', tasksRouter);
 app.use('/api/files', filesRouter);
 app.use('/api/messages', messagesRouter);
+app.use('/api/invoices', invoicesRouter);
 
 app.use((err, req, res, next) => {
   console.error(err);

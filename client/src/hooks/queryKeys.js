@@ -34,3 +34,9 @@ export const fileKeys = {
 export const messageKeys = {
   list: (workspaceId) => ['messages', workspaceId],
 };
+
+export const invoiceKeys = {
+  listByWorkspace: (workspaceId) => ['invoices', 'workspace', workspaceId],
+  listByClient: (clientId) => ['invoices', 'client', clientId],
+  detail: (invoiceId) => ['invoice', invoiceId],
+};

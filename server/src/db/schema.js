@@ -233,3 +233,33 @@ export const sharedFiles = pgTable('shared_files', {
     .defaultNow()
     .notNull(),
 });
+
+export const invoices = pgTable('invoices', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id')
+    .notNull()
+    .references(() => workspaces.id),
+  clientId: text('client_id')
+    .notNull()
+    .references(() => clients.id),
+  createdBy: text('created_by').references(() => users.id),
+  invoiceNumber: text('invoice_number').notNull().unique(),
+  title: text('title').notNull(),
+  description: text('description'),
+  currency: text('currency').default('USD').notNull(),
+  amountCents: integer('amount_cents').notNull(),
+  amountPaidCents: integer('amount_paid_cents').default(0).notNull(),
+  status: text('status').default('DRAFT').notNull(),
+  dueDate: timestamp('due_date', { withTimezone: true }),
+  issuedAt: timestamp('issued_at', { withTimezone: true }),
+  paidAt: timestamp('paid_at', { withTimezone: true }),
+  stripeCheckoutSessionId: text('stripe_checkout_session_id'),
+  stripePaymentIntentId: text('stripe_payment_intent_id'),
+  metadata: jsonb('metadata').default({}),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});

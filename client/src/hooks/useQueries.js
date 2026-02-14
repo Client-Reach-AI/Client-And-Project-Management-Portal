@@ -11,6 +11,8 @@ import {
   lookupClientIntake,
   fetchSharedFiles,
   fetchMessages,
+  fetchInvoices,
+  fetchInvoiceById,
 } from '../api';
 import {
   clientKeys,
@@ -20,6 +22,7 @@ import {
   workspaceKeys,
   fileKeys,
   messageKeys,
+  invoiceKeys,
 } from './queryKeys';
 
 export const useWorkspaces = (options = {}) =>
@@ -112,5 +115,29 @@ export const useMessages = (workspaceId, options = {}) =>
     queryFn: () => fetchMessages(workspaceId),
     enabled: Boolean(workspaceId),
     refetchInterval: 8000,
+    ...options,
+  });
+
+export const useInvoicesByWorkspace = (workspaceId, options = {}) =>
+  useQuery({
+    queryKey: invoiceKeys.listByWorkspace(workspaceId),
+    queryFn: () => fetchInvoices({ workspaceId }),
+    enabled: Boolean(workspaceId),
+    ...options,
+  });
+
+export const useInvoicesByClient = (clientId, options = {}) =>
+  useQuery({
+    queryKey: invoiceKeys.listByClient(clientId),
+    queryFn: () => fetchInvoices({ clientId }),
+    enabled: Boolean(clientId),
+    ...options,
+  });
+
+export const useInvoice = (invoiceId, options = {}) =>
+  useQuery({
+    queryKey: invoiceKeys.detail(invoiceId),
+    queryFn: () => fetchInvoiceById(invoiceId),
+    enabled: Boolean(invoiceId),
     ...options,
   });
