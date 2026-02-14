@@ -33,7 +33,7 @@ const stripSensitive = (user) => {
 };
 
 const buildInviteLink = (token) => {
-  const baseUrl = process.env.APP_BASE_URL || 'http://localhost:5173';
+  const baseUrl = process.env.APP_BASE_URL;
   return `${baseUrl}/accept-invite?token=${token}`;
 };
 
