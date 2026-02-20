@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import crypto from 'crypto';
+import nodemailer from 'nodemailer';
 import { and, eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { clientIntakes, clients, workspaces } from '../db/schema.js';
@@ -8,7 +9,15 @@ import { requireAuth } from '../middleware/auth.js';
 import { isWorkspaceAdmin } from '../lib/permissions.js';
 
 const router = Router();
-const WEBHOOK_TIMEOUT_MS = 10000;
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 const buildIntakeLink = (token) => {
   const baseUrl = process.env.ONBOARDING_PORTAL_URL || 'http://localhost:3000';
@@ -32,30 +41,34 @@ const createIntakeRecord = async ({ workspaceId, clientId = null }) => {
   return { token, link: buildIntakeLink(token) };
 };
 
-const postWebhook = async ({ webhookUrl, data }) => {
-  if (!webhookUrl) return;
+const escapeHtml = (value = '') =>
+  String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), WEBHOOK_TIMEOUT_MS);
+const buildLeadResourceEmailHtml = (name) => `
+<html><body style="margin:0;padding:0;background:#f0f8ff;font-family:Arial,sans-serif;"><table width="100%" style="background:#f0f8ff;padding:40px 20px;"><tr><td align="center"><table width="600" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(20,163,246,0.08);"><tr><td style="background:#ffffff;padding:32px 40px;text-align:center;border-bottom:3px solid #14A3F6;"><table cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr><td style="font-size:26px;font-weight:800;color:#0a2540;font-family:Arial,sans-serif;">Client<span style="color:#14A3F6;">Reach</span>.ai</td></tr></table></td></tr><tr><td style="padding:36px 40px;"><p style="color:#0a2540;font-size:18px;font-weight:600;margin:0 0 18px;">Hey ${escapeHtml(name)},</p><p style="color:#4a5568;font-size:15px;line-height:1.7;margin:0 0 24px;">Thanks for signing up. Here's the resource you requested &mdash; no fluff, just actionable strategies to grow with AI.</p><p style="text-align:center;margin:0 0 28px;"><a href="https://drive.google.com/uc?export=download&id=1-YZF-nVlI6O9G9Pgof1YGCPJQ6of9Y4X" style="background:#14A3F6;color:#ffffff;text-decoration:none;padding:15px 40px;border-radius:50px;font-weight:700;font-size:15px;display:inline-block;box-shadow:0 4px 16px rgba(20,163,246,0.35);letter-spacing:0.3px;">Download Now &rarr;</a></p><p style="color:#4a5568;font-size:14px;line-height:1.6;margin:0;">Got questions? Just reply to this email.</p><p style="color:#0a2540;font-size:14px;margin:22px 0 0;">Talk soon,<br><strong>The ClientReach.ai Team</strong></p></td></tr><tr><td style="background:#f8fbff;padding:18px 40px;text-align:center;border-top:1px solid #e8f0fe;"><p style="color:#94a3b8;font-size:11px;margin:0;">&copy; 2026 ClientReach.ai &mdash; Scale Your Business, Not Your Headcount.</p></td></tr></table></td></tr></table></body></html>
+`;
 
-  try {
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal,
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      const responseText = await response.text().catch(() => '');
-      const details = responseText
-        ? ` (${responseText.slice(0, 200)})`
-        : '';
-      throw new Error(`Webhook returned ${response.status}${details}`);
-    }
-  } finally {
-    clearTimeout(timeoutId);
+const sendLeadResourceEmail = async ({ name, email }) => {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    throw new Error('EMAIL_USER or EMAIL_PASS is not configured');
   }
+
+  const safeName =
+    String(name || 'there')
+      .replace(/[\r\n]+/g, ' ')
+      .trim() || 'there';
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+    to: email,
+    subject: `Your free resource is ready, ${safeName}`,
+    html: buildLeadResourceEmailHtml(safeName),
+  });
 };
 
 router.post('/public', async (req, res, next) => {
@@ -228,7 +241,6 @@ router.post('/submit', async (req, res, next) => {
       })
       .where(eq(clientIntakes.id, intake.id));
 
-    const webhookUrl = process.env.WEBHOOK_URL?.trim();
     const salesFunnelPayload = {
       name: payload?.name,
       email: payload?.email,
@@ -237,20 +249,24 @@ router.post('/submit', async (req, res, next) => {
     };
     const isSalesFunnelPayload =
       typeof salesFunnelPayload.name === 'string' &&
+      salesFunnelPayload.name.trim() &&
       typeof salesFunnelPayload.email === 'string' &&
+      salesFunnelPayload.email.trim() &&
       typeof salesFunnelPayload.business_model === 'string' &&
-      typeof salesFunnelPayload.biggest_bottleneck === 'string';
+      salesFunnelPayload.business_model.trim() &&
+      typeof salesFunnelPayload.biggest_bottleneck === 'string' &&
+      salesFunnelPayload.biggest_bottleneck.trim();
 
-    if (webhookUrl && isSalesFunnelPayload) {
+    if (isSalesFunnelPayload) {
       try {
-        await postWebhook({
-          webhookUrl,
-          data: salesFunnelPayload,
+        await sendLeadResourceEmail({
+          name: salesFunnelPayload.name,
+          email: salesFunnelPayload.email,
         });
       } catch (error) {
-        console.error('[client-intakes] webhook request failed:', error);
+        console.error('[client-intakes] lead email send failed:', error);
         return res.status(502).json({
-          message: 'Webhook request failed. Please try again.',
+          message: 'Failed to send resource email. Please try again.',
         });
       }
     }
