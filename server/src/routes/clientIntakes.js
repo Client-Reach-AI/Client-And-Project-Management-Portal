@@ -121,12 +121,15 @@ router.post('/submit', async (req, res, next) => {
     let clientId = intake.clientId || null;
 
     const intakeSource = payload?.source === 'PUBLIC' ? 'PUBLIC' : 'INTAKE';
+    const normalizedContactName =
+      payload?.contact_name || payload?.name || payload?.clientName || null;
+    const normalizedServiceType =
+      payload?.service_type || payload?.business_model || null;
 
     if (!clientId) {
       const newClientId = generateId('client');
       const name =
-        payload?.contact_name ||
-        payload?.clientName ||
+        normalizedContactName ||
         payload?.company_name ||
         payload?.company ||
         'Client';
@@ -141,13 +144,13 @@ router.post('/submit', async (req, res, next) => {
         workspaceId: intake.workspaceId,
         name,
         company: payload?.company_name || payload?.company || null,
-        contactName: payload?.contact_name || null,
+        contactName: normalizedContactName,
         contactRole: payload?.contact_role || null,
         email: payload?.email || null,
         phone: payload?.phone || null,
         website,
         industry: payload?.industry || null,
-        serviceType: payload?.service_type || null,
+        serviceType: normalizedServiceType,
         businessDetails: payload?.business_details || {},
         serviceResponses: payload?.service_responses || {},
         uploadedFiles: payload?.uploaded_files || [],
@@ -155,7 +158,9 @@ router.post('/submit', async (req, res, next) => {
         details: {
           source: intakeSource,
           intakeId: intake.id,
-          serviceType: payload?.service_type || null,
+          serviceType: normalizedServiceType,
+          businessModel: payload?.business_model || null,
+          biggestBottleneck: payload?.biggest_bottleneck || null,
           contactRole: payload?.contact_role || null,
           businessDetails: payload?.business_details || null,
           serviceResponses: payload?.service_responses || null,
@@ -180,9 +185,9 @@ router.post('/submit', async (req, res, next) => {
     await db
       .update(clientIntakes)
       .set({
-        serviceType: payload?.service_type || null,
-        companyName: payload?.company_name || null,
-        contactName: payload?.contact_name || null,
+        serviceType: normalizedServiceType,
+        companyName: payload?.company_name || payload?.company || null,
+        contactName: normalizedContactName,
         contactRole: payload?.contact_role || null,
         industry: payload?.industry || null,
         businessDetails: payload?.business_details || {},
