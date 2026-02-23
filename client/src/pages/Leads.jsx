@@ -57,6 +57,53 @@ const buildSimpleLeadLinkWithSource = (baseUrl, sourceKey) => {
   return `${baseUrl}${encodeURIComponent(sourceKey)}`;
 };
 
+const uploadToCloudinaryWithProgress = ({
+  cloudName,
+  resourceType,
+  formData,
+  onProgress,
+}) =>
+  new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(
+      'POST',
+      `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`
+    );
+    xhr.responseType = 'json';
+
+    xhr.upload.onprogress = (event) => {
+      if (!event.lengthComputable || typeof onProgress !== 'function') return;
+      const percent = Math.round((event.loaded / event.total) * 100);
+      onProgress(Math.min(Math.max(percent, 0), 100));
+    };
+
+    xhr.onload = () => {
+      const response =
+        xhr.response && typeof xhr.response === 'object'
+          ? xhr.response
+          : (() => {
+              try {
+                return JSON.parse(xhr.responseText || '{}');
+              } catch {
+                return {};
+              }
+            })();
+
+      if (xhr.status >= 200 && xhr.status < 300 && !response?.error) {
+        resolve(response);
+        return;
+      }
+
+      reject(new Error(response?.error?.message || 'Upload failed'));
+    };
+
+    xhr.onerror = () => {
+      reject(new Error('Upload failed'));
+    };
+
+    xhr.send(formData);
+  });
+
 const Leads = () => {
   const user = useSelector((state) => state.auth.user);
   const { currentWorkspace } = useWorkspaceContext();
@@ -84,6 +131,7 @@ const Leads = () => {
 
   const [resourceName, setResourceName] = useState('');
   const [uploadingResource, setUploadingResource] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const leads = useMemo(() => {
     return intakes
@@ -171,6 +219,7 @@ const Leads = () => {
     }
 
     setUploadingResource(true);
+    setUploadProgress(0);
     try {
       const signature = await createSignature({
         workspaceId,
@@ -188,18 +237,13 @@ const Leads = () => {
 
       const isImage = file.type?.startsWith('image/');
       const resourceType = isImage ? 'image' : 'raw';
-      const uploadResponse = await fetch(
-        `https://api.cloudinary.com/v1_1/${signature.cloudName}/${resourceType}/upload`,
-        {
-          method: 'POST',
-          body: formData,
-        }
-      );
-
-      const uploaded = await uploadResponse.json();
-      if (!uploadResponse.ok || uploaded?.error) {
-        throw new Error(uploaded?.error?.message || 'Upload failed');
-      }
+      const uploaded = await uploadToCloudinaryWithProgress({
+        cloudName: signature.cloudName,
+        resourceType,
+        formData,
+        onProgress: setUploadProgress,
+      });
+      setUploadProgress(100);
 
       await createLeadResource({
         workspaceId,
@@ -216,6 +260,7 @@ const Leads = () => {
       toast.error(error?.message || 'Failed to upload resource');
     } finally {
       setUploadingResource(false);
+      setUploadProgress(0);
       event.target.value = '';
     }
   };
@@ -491,12 +536,21 @@ const Leads = () => {
               <input
                 value={resourceName}
                 onChange={(event) => setResourceName(event.target.value)}
+                disabled={uploadingResource}
                 placeholder="Resource name (e.g. n8n, workflow, crm)"
                 className="w-full text-sm px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
               />
-              <label className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg text-sm text-zinc-600 dark:text-zinc-300 cursor-pointer">
+              <label
+                className={`inline-flex items-center justify-center gap-2 px-4 py-2 border border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg text-sm text-zinc-600 dark:text-zinc-300 ${
+                  uploadingResource
+                    ? 'cursor-not-allowed pointer-events-none opacity-60'
+                    : 'cursor-pointer'
+                }`}
+              >
                 <UploadCloudIcon className="size-4" />
-                {uploadingResource ? 'Uploading...' : 'Select file'}
+                {uploadingResource
+                  ? `Uploading ${uploadProgress}%`
+                  : 'Select file'}
                 <input
                   type="file"
                   onChange={handleUploadResource}
@@ -505,6 +559,20 @@ const Leads = () => {
                 />
               </label>
             </div>
+
+            {uploadingResource && (
+              <div className="space-y-1">
+                <div className="h-2 w-full rounded bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
+                  <div
+                    className="h-full bg-blue-500 transition-all duration-150"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Uploading... {uploadProgress}%
+                </p>
+              </div>
+            )}
 
             {resourceName.trim() && (
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
