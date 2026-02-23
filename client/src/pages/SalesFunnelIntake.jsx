@@ -24,10 +24,22 @@ const initialFormData = {
   biggest_bottleneck: '',
 };
 
+const BUSINESS_MODEL_OPTIONS = [
+  { value: 'dentist', label: 'Dentist' },
+  { value: 'real-state', label: 'Real State' },
+  { value: 'online-coach', label: 'Online Coach' },
+  { value: 'law-firms', label: 'Law Firms' },
+  { value: 'trades-people', label: 'Trades People' },
+  { value: 'ecommerce', label: 'Ecommerce' },
+  { value: 'brand', label: 'Brand' },
+  { value: 'business', label: 'Business' },
+];
+
 const SalesFunnelIntake = () => {
   const [searchParams] = useSearchParams();
   const tokenParam = searchParams.get('token');
   const workspaceIdParam = searchParams.get('workspaceId');
+  const srcParam = searchParams.get('src');
 
   const [intakeToken, setIntakeToken] = useState(tokenParam);
   const [publicInitError, setPublicInitError] = useState(null);
@@ -123,6 +135,7 @@ const SalesFunnelIntake = () => {
         token: intakeToken,
         payload: {
           source: 'PUBLIC',
+          src: typeof srcParam === 'string' ? srcParam.trim() : '',
           name: formData.name,
           email: formData.email,
           business_model: formData.business_model,
@@ -285,12 +298,11 @@ const SalesFunnelIntake = () => {
                   }
                 >
                   <option value="">Select type...</option>
-                  <option value="Marketing Agency">Marketing Agency</option>
-                  <option value="E-commerce">E-commerce</option>
-                  <option value="Coaching/Consulting">Coaching/Consulting</option>
-                  <option value="SaaS/Tech">SaaS/Tech</option>
-                  <option value="Local Business">Local Business</option>
-                  <option value="Other">Other</option>
+                  {BUSINESS_MODEL_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
                 {errors.business_model && (
                   <p className="text-red-500 text-xs mt-1">
