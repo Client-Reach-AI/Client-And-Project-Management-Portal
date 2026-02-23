@@ -20,6 +20,7 @@ const SUCCESS_COLOR = '#10B981';
 const initialFormData = {
   name: '',
   email: '',
+  phone: '',
   business_model: '',
   biggest_bottleneck: '',
 };
@@ -138,6 +139,7 @@ const SalesFunnelIntake = () => {
           src: typeof srcParam === 'string' ? srcParam.trim() : '',
           name: formData.name,
           email: formData.email,
+          phone: formData.phone,
           business_model: formData.business_model,
           biggest_bottleneck: formData.biggest_bottleneck,
         },
@@ -281,6 +283,21 @@ const SalesFunnelIntake = () => {
                 {errors.email && (
                   <p className="text-red-500 text-xs mt-1">{errors.email}</p>
                 )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                  Phone Number (Optional)
+                </label>
+                <input
+                  type="tel"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-[#14A3F6] transition-all hover:bg-white/10"
+                  placeholder="+1 555 123 4567"
+                  value={formData.phone}
+                  onChange={(event) =>
+                    updateField('phone', event.target.value)
+                  }
+                />
               </div>
 
               <div>

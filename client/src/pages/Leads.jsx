@@ -18,6 +18,9 @@ const getLeadName = (payload = {}) =>
   payload.company ||
   'Unknown';
 
+const getLeadPhone = (payload = {}) =>
+  payload.phone || payload.contact_phone || 'N/A';
+
 const normalizeSourceKey = (value = '') =>
   String(value || '')
     .trim()
@@ -145,6 +148,7 @@ const Leads = () => {
           payload,
           name: getLeadName(payload),
           email: payload.email || 'N/A',
+          phone: getLeadPhone(payload),
           businessModel: getBusinessModel(payload),
           sourceKey: sourceKey || 'N/A',
           biggestBottleneck:
@@ -385,6 +389,7 @@ const Leads = () => {
                   <tr className="text-left text-zinc-500 dark:text-zinc-400">
                     <th className="px-4 py-3 font-medium">Name</th>
                     <th className="px-4 py-3 font-medium">Email</th>
+                    <th className="px-4 py-3 font-medium">Phone</th>
                     <th className="px-4 py-3 font-medium">Business Model</th>
                     <th className="px-4 py-3 font-medium">Source (src)</th>
                     <th className="px-4 py-3 font-medium">Submitted</th>
@@ -395,7 +400,7 @@ const Leads = () => {
                     <tr>
                       <td
                         className="px-4 py-6 text-zinc-500 dark:text-zinc-400"
-                        colSpan={5}
+                        colSpan={6}
                       >
                         No leads submitted yet.
                       </td>
@@ -419,6 +424,9 @@ const Leads = () => {
                       </td>
                       <td className="px-4 py-3 text-zinc-600 dark:text-zinc-300">
                         {lead.email}
+                      </td>
+                      <td className="px-4 py-3 text-zinc-600 dark:text-zinc-300">
+                        {lead.phone}
                       </td>
                       <td className="px-4 py-3 text-zinc-600 dark:text-zinc-300">
                         {lead.businessModel}
@@ -480,6 +488,12 @@ const Leads = () => {
                       <p className="text-zinc-500 dark:text-zinc-400">Email</p>
                       <p className="text-zinc-900 dark:text-zinc-100">
                         {selectedLead.email}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-zinc-500 dark:text-zinc-400">Phone</p>
+                      <p className="text-zinc-900 dark:text-zinc-100">
+                        {selectedLead.phone}
                       </p>
                     </div>
                     <div>
