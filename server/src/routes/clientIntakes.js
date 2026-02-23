@@ -1,14 +1,21 @@
 import { Router } from 'express';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { clientIntakes, clients, workspaces } from '../db/schema.js';
+import {
+  clientIntakes,
+  clients,
+  sharedFiles,
+  workspaces,
+} from '../db/schema.js';
 import { generateId } from '../lib/ids.js';
 import { requireAuth } from '../middleware/auth.js';
 import { isWorkspaceAdmin } from '../lib/permissions.js';
 
 const router = Router();
+const LEAD_RESOURCE_TYPE = 'LEAD_RESOURCE';
+
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465,
@@ -41,6 +48,15 @@ const createIntakeRecord = async ({ workspaceId, clientId = null }) => {
   return { token, link: buildIntakeLink(token) };
 };
 
+const toSafeString = (value) =>
+  typeof value === 'string' ? value.trim() : '';
+
+const normalizeSourceKey = (value) =>
+  toSafeString(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
 const escapeHtml = (value = '') =>
   String(value)
     .replace(/&/g, '&amp;')
@@ -49,26 +65,58 @@ const escapeHtml = (value = '') =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
-const buildLeadResourceEmailHtml = (name) => `
-<html><body style="margin:0;padding:0;background:#f0f8ff;font-family:Arial,sans-serif;"><table width="100%" style="background:#f0f8ff;padding:40px 20px;"><tr><td align="center"><table width="600" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(20,163,246,0.08);"><tr><td style="background:#ffffff;padding:32px 40px;text-align:center;border-bottom:3px solid #14A3F6;"><table cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr><td style="font-size:26px;font-weight:800;color:#0a2540;font-family:Arial,sans-serif;">Client<span style="color:#14A3F6;">Reach</span>.ai</td></tr></table></td></tr><tr><td style="padding:36px 40px;"><p style="color:#0a2540;font-size:18px;font-weight:600;margin:0 0 18px;">Hey ${escapeHtml(name)},</p><p style="color:#4a5568;font-size:15px;line-height:1.7;margin:0 0 24px;">Thanks for signing up. Here's the resource you requested &mdash; no fluff, just actionable strategies to grow with AI.</p><p style="text-align:center;margin:0 0 28px;"><a href="https://drive.google.com/uc?export=download&id=1-YZF-nVlI6O9G9Pgof1YGCPJQ6of9Y4X" style="background:#14A3F6;color:#ffffff;text-decoration:none;padding:15px 40px;border-radius:50px;font-weight:700;font-size:15px;display:inline-block;box-shadow:0 4px 16px rgba(20,163,246,0.35);letter-spacing:0.3px;">Download Now &rarr;</a></p><p style="color:#4a5568;font-size:14px;line-height:1.6;margin:0;">Got questions? Just reply to this email.</p><p style="color:#0a2540;font-size:14px;margin:22px 0 0;">Talk soon,<br><strong>The ClientReach.ai Team</strong></p></td></tr><tr><td style="background:#f8fbff;padding:18px 40px;text-align:center;border-top:1px solid #e8f0fe;"><p style="color:#94a3b8;font-size:11px;margin:0;">&copy; 2026 ClientReach.ai &mdash; Scale Your Business, Not Your Headcount.</p></td></tr></table></td></tr></table></body></html>
+const buildLeadResourceEmailHtml = (name, downloadUrl) => `
+<html><body style="margin:0;padding:0;background:#f0f8ff;font-family:Arial,sans-serif;"><table width="100%" style="background:#f0f8ff;padding:40px 20px;"><tr><td align="center"><table width="600" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(20,163,246,0.08);"><tr><td style="background:#ffffff;padding:32px 40px;text-align:center;border-bottom:3px solid #14A3F6;"><table cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr><td style="font-size:26px;font-weight:800;color:#0a2540;font-family:Arial,sans-serif;">Client<span style="color:#14A3F6;">Reach</span>.ai</td></tr></table></td></tr><tr><td style="padding:36px 40px;"><p style="color:#0a2540;font-size:18px;font-weight:600;margin:0 0 18px;">Hey ${escapeHtml(name)},</p><p style="color:#4a5568;font-size:15px;line-height:1.7;margin:0 0 24px;">Thanks for signing up. Here's the resource you requested &mdash; no fluff, just actionable strategies to grow with AI.</p><p style="text-align:center;margin:0 0 28px;"><a href="${escapeHtml(downloadUrl)}" style="background:#14A3F6;color:#ffffff;text-decoration:none;padding:15px 40px;border-radius:50px;font-weight:700;font-size:15px;display:inline-block;box-shadow:0 4px 16px rgba(20,163,246,0.35);letter-spacing:0.3px;">Download Now &rarr;</a></p><p style="color:#4a5568;font-size:14px;line-height:1.6;margin:0;">Got questions? Just reply to this email.</p><p style="color:#0a2540;font-size:14px;margin:22px 0 0;">Talk soon,<br><strong>The ClientReach.ai Team</strong></p></td></tr><tr><td style="background:#f8fbff;padding:18px 40px;text-align:center;border-top:1px solid #e8f0fe;"><p style="color:#94a3b8;font-size:11px;margin:0;">&copy; 2026 ClientReach.ai &mdash; Scale Your Business, Not Your Headcount.</p></td></tr></table></td></tr></table></body></html>
 `;
 
-const sendLeadResourceEmail = async ({ name, email }) => {
+const sendLeadResourceEmail = async ({ name, email, downloadUrl }) => {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     throw new Error('EMAIL_USER or EMAIL_PASS is not configured');
   }
 
-  const safeName =
-    String(name || 'there')
-      .replace(/[\r\n]+/g, ' ')
-      .trim() || 'there';
+  const safeName = toSafeString(name) || 'there';
 
   await transporter.sendMail({
     from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
     to: email,
     subject: `Your free resource is ready, ${safeName}`,
-    html: buildLeadResourceEmailHtml(safeName),
+    html: buildLeadResourceEmailHtml(safeName, downloadUrl),
   });
+};
+
+const resolveLeadSourceKey = (payload = {}) => {
+  const explicitSrc = normalizeSourceKey(payload?.src);
+  const businessModelSrc = normalizeSourceKey(payload?.business_model);
+  return explicitSrc || businessModelSrc || null;
+};
+
+const findLeadResourceBySource = async ({ workspaceId, sourceKey }) => {
+  if (!workspaceId || !sourceKey) return null;
+
+  const [resource] = await db
+    .select()
+    .from(sharedFiles)
+    .where(
+      and(
+        eq(sharedFiles.workspaceId, workspaceId),
+        eq(sharedFiles.type, LEAD_RESOURCE_TYPE),
+        eq(sharedFiles.name, sourceKey)
+      )
+    )
+    .orderBy(desc(sharedFiles.updatedAt))
+    .limit(1);
+
+  return resource || null;
+};
+
+const isLeadCapturePayload = (payload = {}) => {
+  const name = toSafeString(payload?.name);
+  const email = toSafeString(payload?.email);
+  const hasLeadSignals =
+    Boolean(payload?.src) ||
+    Boolean(payload?.business_model) ||
+    Boolean(payload?.biggest_bottleneck);
+  return Boolean(name && email && hasLeadSignals);
 };
 
 router.post('/public', async (req, res, next) => {
@@ -158,63 +206,110 @@ router.post('/submit', async (req, res, next) => {
       return res.status(400).json({ message: 'Intake expired' });
     }
 
+    const rawPayload = payload || {};
+    const leadSourceKey = resolveLeadSourceKey(rawPayload);
+    const payloadWithSource = leadSourceKey
+      ? { ...rawPayload, src: leadSourceKey }
+      : rawPayload;
+
+    if (isLeadCapturePayload(payloadWithSource)) {
+      const leadName = toSafeString(payloadWithSource?.name);
+      const leadEmail = toSafeString(payloadWithSource?.email);
+
+      if (!leadSourceKey) {
+        return res.status(400).json({
+          message:
+            'Lead source is required. Add ?src= in the link or select a business model.',
+        });
+      }
+
+      const resource = await findLeadResourceBySource({
+        workspaceId: intake.workspaceId,
+        sourceKey: leadSourceKey,
+      });
+
+      if (!resource?.url) {
+        return res.status(400).json({
+          message: `No resource file is configured for source "${leadSourceKey}".`,
+        });
+      }
+
+      try {
+        await sendLeadResourceEmail({
+          name: leadName,
+          email: leadEmail,
+          downloadUrl: resource.url,
+        });
+      } catch (error) {
+        console.error('[client-intakes] lead email send failed:', error);
+        return res.status(502).json({
+          message: 'Failed to send resource email. Please try again.',
+        });
+      }
+    }
+
     let clientId = intake.clientId || null;
 
-    const intakeSource = payload?.source === 'PUBLIC' ? 'PUBLIC' : 'INTAKE';
+    const intakeSource =
+      payloadWithSource?.source === 'PUBLIC' ? 'PUBLIC' : 'INTAKE';
     const normalizedContactName =
-      payload?.contact_name || payload?.name || payload?.clientName || null;
+      payloadWithSource?.contact_name ||
+      payloadWithSource?.name ||
+      payloadWithSource?.clientName ||
+      null;
     const normalizedServiceType =
-      payload?.service_type || payload?.business_model || null;
+      payloadWithSource?.service_type || payloadWithSource?.business_model || null;
 
     if (!clientId) {
       const newClientId = generateId('client');
       const name =
         normalizedContactName ||
-        payload?.company_name ||
-        payload?.company ||
+        payloadWithSource?.company_name ||
+        payloadWithSource?.company ||
         'Client';
       const website =
-        payload?.company_website ||
-        payload?.website ||
-        payload?.service_responses?.current_url ||
+        payloadWithSource?.company_website ||
+        payloadWithSource?.website ||
+        payloadWithSource?.service_responses?.current_url ||
         null;
 
       await db.insert(clients).values({
         id: newClientId,
         workspaceId: intake.workspaceId,
         name,
-        company: payload?.company_name || payload?.company || null,
+        company: payloadWithSource?.company_name || payloadWithSource?.company || null,
         contactName: normalizedContactName,
-        contactRole: payload?.contact_role || null,
-        email: payload?.email || null,
-        phone: payload?.phone || null,
+        contactRole: payloadWithSource?.contact_role || null,
+        email: payloadWithSource?.email || null,
+        phone: payloadWithSource?.phone || null,
         website,
-        industry: payload?.industry || null,
+        industry: payloadWithSource?.industry || null,
         serviceType: normalizedServiceType,
-        businessDetails: payload?.business_details || {},
-        serviceResponses: payload?.service_responses || {},
-        uploadedFiles: payload?.uploaded_files || [],
-        calendlyEventId: payload?.calendly_event_id || null,
+        businessDetails: payloadWithSource?.business_details || {},
+        serviceResponses: payloadWithSource?.service_responses || {},
+        uploadedFiles: payloadWithSource?.uploaded_files || [],
+        calendlyEventId: payloadWithSource?.calendly_event_id || null,
         details: {
           source: intakeSource,
           intakeId: intake.id,
           serviceType: normalizedServiceType,
-          businessModel: payload?.business_model || null,
-          biggestBottleneck: payload?.biggest_bottleneck || null,
-          contactRole: payload?.contact_role || null,
-          businessDetails: payload?.business_details || null,
-          serviceResponses: payload?.service_responses || null,
-          uploadedFiles: payload?.uploaded_files || null,
-          calendlyEventId: payload?.calendly_event_id || null,
-          projectName: payload?.projectName || null,
-          goals: payload?.goals || null,
-          budget: payload?.budget || null,
-          timeline: payload?.timeline || null,
-          targetAudience: payload?.targetAudience || null,
-          brandGuidelines: payload?.brandGuidelines || null,
-          competitors: payload?.competitors || null,
-          successMetrics: payload?.successMetrics || null,
-          notes: payload?.notes || null,
+          sourceKey: leadSourceKey,
+          businessModel: payloadWithSource?.business_model || null,
+          biggestBottleneck: payloadWithSource?.biggest_bottleneck || null,
+          contactRole: payloadWithSource?.contact_role || null,
+          businessDetails: payloadWithSource?.business_details || null,
+          serviceResponses: payloadWithSource?.service_responses || null,
+          uploadedFiles: payloadWithSource?.uploaded_files || null,
+          calendlyEventId: payloadWithSource?.calendly_event_id || null,
+          projectName: payloadWithSource?.projectName || null,
+          goals: payloadWithSource?.goals || null,
+          budget: payloadWithSource?.budget || null,
+          timeline: payloadWithSource?.timeline || null,
+          targetAudience: payloadWithSource?.targetAudience || null,
+          brandGuidelines: payloadWithSource?.brandGuidelines || null,
+          competitors: payloadWithSource?.competitors || null,
+          successMetrics: payloadWithSource?.successMetrics || null,
+          notes: payloadWithSource?.notes || null,
         },
         updatedAt: new Date(),
       });
@@ -226,50 +321,21 @@ router.post('/submit', async (req, res, next) => {
       .update(clientIntakes)
       .set({
         serviceType: normalizedServiceType,
-        companyName: payload?.company_name || payload?.company || null,
+        companyName:
+          payloadWithSource?.company_name || payloadWithSource?.company || null,
         contactName: normalizedContactName,
-        contactRole: payload?.contact_role || null,
-        industry: payload?.industry || null,
-        businessDetails: payload?.business_details || {},
-        serviceResponses: payload?.service_responses || {},
-        uploadedFiles: payload?.uploaded_files || [],
-        calendlyEventId: payload?.calendly_event_id || null,
-        payload: payload || {},
+        contactRole: payloadWithSource?.contact_role || null,
+        industry: payloadWithSource?.industry || null,
+        businessDetails: payloadWithSource?.business_details || {},
+        serviceResponses: payloadWithSource?.service_responses || {},
+        uploadedFiles: payloadWithSource?.uploaded_files || [],
+        calendlyEventId: payloadWithSource?.calendly_event_id || null,
+        payload: payloadWithSource,
         status: 'SUBMITTED',
         submittedAt: new Date(),
         clientId,
       })
       .where(eq(clientIntakes.id, intake.id));
-
-    const salesFunnelPayload = {
-      name: payload?.name,
-      email: payload?.email,
-      business_model: payload?.business_model,
-      biggest_bottleneck: payload?.biggest_bottleneck,
-    };
-    const isSalesFunnelPayload =
-      typeof salesFunnelPayload.name === 'string' &&
-      salesFunnelPayload.name.trim() &&
-      typeof salesFunnelPayload.email === 'string' &&
-      salesFunnelPayload.email.trim() &&
-      typeof salesFunnelPayload.business_model === 'string' &&
-      salesFunnelPayload.business_model.trim() &&
-      typeof salesFunnelPayload.biggest_bottleneck === 'string' &&
-      salesFunnelPayload.biggest_bottleneck.trim();
-
-    if (isSalesFunnelPayload) {
-      try {
-        await sendLeadResourceEmail({
-          name: salesFunnelPayload.name,
-          email: salesFunnelPayload.email,
-        });
-      } catch (error) {
-        console.error('[client-intakes] lead email send failed:', error);
-        return res.status(502).json({
-          message: 'Failed to send resource email. Please try again.',
-        });
-      }
-    }
 
     res.json({ message: 'Intake submitted', clientId });
   } catch (error) {
@@ -278,6 +344,142 @@ router.post('/submit', async (req, res, next) => {
 });
 
 router.use(requireAuth);
+
+router.get('/resources', async (req, res, next) => {
+  try {
+    const { workspaceId } = req.query;
+    if (!workspaceId) {
+      return res.status(400).json({ message: 'workspaceId is required' });
+    }
+
+    const admin =
+      req.user.role === 'ADMIN' ||
+      (await isWorkspaceAdmin(req.user.id, workspaceId));
+    if (!admin) return res.status(403).json({ message: 'Forbidden' });
+
+    const resources = await db
+      .select()
+      .from(sharedFiles)
+      .where(
+        and(
+          eq(sharedFiles.workspaceId, workspaceId),
+          eq(sharedFiles.type, LEAD_RESOURCE_TYPE)
+        )
+      )
+      .orderBy(desc(sharedFiles.updatedAt));
+
+    res.json(
+      resources.map((item) => ({
+        ...item,
+        sourceKey: item.name,
+        label: item?.metadata?.label || item.name,
+      }))
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/resources', async (req, res, next) => {
+  try {
+    const { workspaceId, name, url, size, mimeType, cloudinaryPublicId } =
+      req.body || {};
+
+    if (!workspaceId || !name || !url) {
+      return res
+        .status(400)
+        .json({ message: 'workspaceId, name and url are required' });
+    }
+
+    const admin =
+      req.user.role === 'ADMIN' ||
+      (await isWorkspaceAdmin(req.user.id, workspaceId));
+    if (!admin) return res.status(403).json({ message: 'Forbidden' });
+
+    const sourceKey = normalizeSourceKey(name);
+    if (!sourceKey) {
+      return res
+        .status(400)
+        .json({ message: 'name must include letters or numbers' });
+    }
+
+    const [existing] = await db
+      .select()
+      .from(sharedFiles)
+      .where(
+        and(
+          eq(sharedFiles.workspaceId, workspaceId),
+          eq(sharedFiles.type, LEAD_RESOURCE_TYPE),
+          eq(sharedFiles.name, sourceKey)
+        )
+      )
+      .limit(1);
+
+    if (existing) {
+      await db
+        .update(sharedFiles)
+        .set({
+          url,
+          size: size || null,
+          mimeType: mimeType || null,
+          cloudinaryPublicId: cloudinaryPublicId || existing.cloudinaryPublicId,
+          metadata: {
+            ...(existing.metadata || {}),
+            label: toSafeString(name),
+            sourceKey,
+          },
+          updatedAt: new Date(),
+        })
+        .where(eq(sharedFiles.id, existing.id));
+
+      const [updated] = await db
+        .select()
+        .from(sharedFiles)
+        .where(eq(sharedFiles.id, existing.id))
+        .limit(1);
+
+      return res.status(200).json({
+        ...updated,
+        sourceKey: updated.name,
+        label: updated?.metadata?.label || updated.name,
+      });
+    }
+
+    const fileId = generateId('file');
+    await db.insert(sharedFiles).values({
+      id: fileId,
+      workspaceId,
+      clientId: null,
+      projectId: null,
+      name: sourceKey,
+      type: LEAD_RESOURCE_TYPE,
+      url,
+      size: size || null,
+      mimeType: mimeType || null,
+      cloudinaryPublicId: cloudinaryPublicId || null,
+      uploadedBy: req.user.id,
+      metadata: {
+        label: toSafeString(name),
+        sourceKey,
+      },
+      updatedAt: new Date(),
+    });
+
+    const [created] = await db
+      .select()
+      .from(sharedFiles)
+      .where(eq(sharedFiles.id, fileId))
+      .limit(1);
+
+    res.status(201).json({
+      ...created,
+      sourceKey: created.name,
+      label: created?.metadata?.label || created.name,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.get('/', async (req, res, next) => {
   try {

@@ -14,6 +14,7 @@ import AcceptInvite from './pages/AcceptInvite';
 import Clients from './pages/Clients';
 import ClientIntake from './pages/ClientIntake';
 import SalesFunnelIntake from './pages/SalesFunnelIntake';
+import SimpleLeadIntake from './pages/SimpleLeadIntake';
 import MyTasks from './pages/MyTasks';
 import ClientFilesLinks from './pages/ClientFilesLinks';
 import ClientInvoices from './pages/ClientInvoices';
@@ -65,6 +66,7 @@ const App = () => {
         <Route path="/accept-invite" element={<AcceptInvite />} />
         <Route path="/client-intake" element={<ClientIntake />} />
         <Route path="/intake" element={<SalesFunnelIntake />} />
+        <Route path="/intake-simple" element={<SimpleLeadIntake />} />
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="team" element={<Team />} />

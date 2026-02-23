@@ -22,6 +22,10 @@ export const intakeKeys = {
   lookup: (token) => ['clientIntake', token],
 };
 
+export const leadResourceKeys = {
+  list: (workspaceId) => ['leadResources', workspaceId],
+};
+
 export const fileKeys = {
   list: (workspaceId, clientId, projectId) => [
     'sharedFiles',

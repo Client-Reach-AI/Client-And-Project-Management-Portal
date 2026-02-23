@@ -13,10 +13,12 @@ import {
   fetchMessages,
   fetchInvoices,
   fetchInvoiceById,
+  fetchLeadResources,
 } from '../api';
 import {
   clientKeys,
   intakeKeys,
+  leadResourceKeys,
   projectKeys,
   taskKeys,
   workspaceKeys,
@@ -95,6 +97,14 @@ export const useClientIntakeLookup = (token, options = {}) =>
     queryKey: intakeKeys.lookup(token),
     queryFn: () => lookupClientIntake(token),
     enabled: Boolean(token),
+    ...options,
+  });
+
+export const useLeadResources = (workspaceId, options = {}) =>
+  useQuery({
+    queryKey: leadResourceKeys.list(workspaceId),
+    queryFn: () => fetchLeadResources(workspaceId),
+    enabled: Boolean(workspaceId),
     ...options,
   });
 

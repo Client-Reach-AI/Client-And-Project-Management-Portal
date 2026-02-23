@@ -29,10 +29,12 @@ import {
   createInvoice,
   updateInvoice,
   createInvoiceCheckoutSession,
+  createLeadResource,
 } from '../api';
 import {
   clientKeys,
   intakeKeys,
+  leadResourceKeys,
   projectKeys,
   taskKeys,
   workspaceKeys,
@@ -382,6 +384,21 @@ export const useCreateClientIntake = () => {
       if (variables?.workspaceId) {
         queryClient.invalidateQueries({
           queryKey: intakeKeys.list(variables.workspaceId),
+        });
+      }
+    },
+  });
+};
+
+export const useCreateLeadResource = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createLeadResource,
+    onSuccess: (created, variables) => {
+      const workspaceId = created?.workspaceId || variables?.workspaceId;
+      if (workspaceId) {
+        queryClient.invalidateQueries({
+          queryKey: leadResourceKeys.list(workspaceId),
         });
       }
     },

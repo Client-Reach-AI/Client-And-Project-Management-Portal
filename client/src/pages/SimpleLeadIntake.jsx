@@ -1,13 +1,7 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useSearchParams } from 'react-router-dom';
-import {
-  AlertTriangle,
-  Briefcase,
-  CheckCircle,
-  Loader2,
-  Send,
-} from 'lucide-react';
+import { CheckCircle, Loader2, Send } from 'lucide-react';
 import { useClientIntakeLookup } from '../hooks/useQueries';
 import {
   useCreatePublicClientIntake,
@@ -20,26 +14,14 @@ const SUCCESS_COLOR = '#10B981';
 const initialFormData = {
   name: '',
   email: '',
-  business_model: '',
-  biggest_bottleneck: '',
 };
 
-const BUSINESS_MODEL_OPTIONS = [
-  { value: 'dentist', label: 'Dentist' },
-  { value: 'real-state', label: 'Real State' },
-  { value: 'online-coach', label: 'Online Coach' },
-  { value: 'law-firms', label: 'Law Firms' },
-  { value: 'trades-people', label: 'Trades People' },
-  { value: 'ecommerce', label: 'Ecommerce' },
-  { value: 'brand', label: 'Brand' },
-  { value: 'business', label: 'Business' },
-];
-
-const SalesFunnelIntake = () => {
+const SimpleLeadIntake = () => {
   const [searchParams] = useSearchParams();
   const tokenParam = searchParams.get('token');
   const workspaceIdParam = searchParams.get('workspaceId');
   const srcParam = searchParams.get('src');
+  const normalizedSrc = typeof srcParam === 'string' ? srcParam.trim() : '';
 
   const [intakeToken, setIntakeToken] = useState(tokenParam);
   const [publicInitError, setPublicInitError] = useState(null);
@@ -112,12 +94,8 @@ const SalesFunnelIntake = () => {
       nextErrors.email = 'Invalid email address';
     }
 
-    if (!formData.business_model) {
-      nextErrors.business_model = 'Please select a business model';
-    }
-
-    if (!formData.biggest_bottleneck.trim()) {
-      nextErrors.biggest_bottleneck = 'Please tell us about your bottleneck';
+    if (!normalizedSrc) {
+      nextErrors.src = 'This link is missing src. Please request a proper link.';
     }
 
     setErrors(nextErrors);
@@ -135,11 +113,9 @@ const SalesFunnelIntake = () => {
         token: intakeToken,
         payload: {
           source: 'PUBLIC',
-          src: typeof srcParam === 'string' ? srcParam.trim() : '',
+          src: normalizedSrc,
           name: formData.name,
           email: formData.email,
-          business_model: formData.business_model,
-          biggest_bottleneck: formData.biggest_bottleneck,
         },
       });
       toast.success('Your details were submitted successfully.', { id: toastId });
@@ -240,7 +216,7 @@ const SalesFunnelIntake = () => {
                 Unlock Your Free Access
               </h2>
               <p className="text-gray-400">
-                Join other industry leaders scaling with AI.
+                Share your details to get the requested resource.
               </p>
             </div>
 
@@ -283,58 +259,11 @@ const SalesFunnelIntake = () => {
                 )}
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5 flex items-center gap-2">
-                  <Briefcase className="w-4 h-4 text-[#F59E0B]" /> Business
-                  Model *
-                </label>
-                <select
-                  className={`w-full bg-[#111111] border ${
-                    errors.business_model ? 'border-red-500' : 'border-white/10'
-                  } rounded-xl px-4 py-3 focus:outline-none focus:border-[#14A3F6] transition-colors appearance-none text-gray-300`}
-                  value={formData.business_model}
-                  onChange={(event) =>
-                    updateField('business_model', event.target.value)
-                  }
-                >
-                  <option value="">Select type...</option>
-                  {BUSINESS_MODEL_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                {errors.business_model && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.business_model}
-                  </p>
-                )}
-              </div>
+              <input type="hidden" value={normalizedSrc} readOnly />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5 flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-[#EF4444]" /> What&apos;s
-                  the biggest bottleneck in your business? *
-                </label>
-                <textarea
-                  rows={2}
-                  className={`w-full bg-white/5 border ${
-                    errors.biggest_bottleneck
-                      ? 'border-red-500'
-                      : 'border-white/10'
-                  } rounded-xl px-4 py-3 focus:outline-none focus:border-[#14A3F6] transition-colors resize-none`}
-                  placeholder="e.g. I'm stuck doing manual outreach..."
-                  value={formData.biggest_bottleneck}
-                  onChange={(event) =>
-                    updateField('biggest_bottleneck', event.target.value)
-                  }
-                />
-                {errors.biggest_bottleneck && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.biggest_bottleneck}
-                  </p>
-                )}
-              </div>
+              {errors.src && (
+                <p className="text-red-500 text-xs mt-1">{errors.src}</p>
+              )}
             </div>
 
             <button
@@ -386,4 +315,4 @@ const SalesFunnelIntake = () => {
   );
 };
 
-export default SalesFunnelIntake;
+export default SimpleLeadIntake;
