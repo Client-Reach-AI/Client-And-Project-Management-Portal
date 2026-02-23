@@ -52,6 +52,11 @@ const buildOpenUrl = (item) => {
   return url;
 };
 
+const buildSimpleLeadLinkWithSource = (baseUrl, sourceKey) => {
+  if (!baseUrl || !sourceKey) return '';
+  return `${baseUrl}${encodeURIComponent(sourceKey)}`;
+};
+
 const Leads = () => {
   const user = useSelector((state) => state.auth.user);
   const { currentWorkspace } = useWorkspaceContext();
@@ -567,14 +572,17 @@ const Leads = () => {
                             type="button"
                             onClick={() =>
                               copyText(
-                                resource.sourceKey,
-                                `Copied src "${resource.sourceKey}"`
+                                buildSimpleLeadLinkWithSource(
+                                  simpleLeadFormUrl,
+                                  resource.sourceKey
+                                ),
+                                `Copied link for src "${resource.sourceKey}"`
                               )
                             }
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded border border-zinc-300 dark:border-zinc-700"
                           >
                             <Copy className="size-3.5" />
-                            Copy src
+                            Copy link
                           </button>
                           <button
                             type="button"
