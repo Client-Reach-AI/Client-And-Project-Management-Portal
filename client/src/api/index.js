@@ -139,6 +139,17 @@ export const submitClientIntake = async (payload) =>
     body: JSON.stringify(payload),
   });
 
+export const fetchLeadResources = async (workspaceId) =>
+  apiFetch(
+    `/api/client-intakes/resources?workspaceId=${encodeURIComponent(workspaceId)}`
+  );
+
+export const createLeadResource = async (payload) =>
+  apiFetch('/api/client-intakes/resources', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
 export const sendInvitation = async (payload) =>
   apiFetch('/api/invitations', {
     method: 'POST',
