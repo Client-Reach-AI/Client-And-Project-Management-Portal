@@ -179,8 +179,10 @@ const SalesFunnelIntake = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black px-4 text-white">
         <div className="max-w-lg w-full p-8 text-center rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md">
-          <h1 className="text-2xl font-semibold">Form unavailable</h1>
-          <p className="text-sm text-gray-400 mt-2">{publicInitError}</p>
+          <h1 className="text-2xl font-semibold">Invalid form link</h1>
+          <p className="text-sm text-gray-400 mt-2">
+            Please request a new lead form link.
+          </p>
         </div>
       </div>
     );
@@ -198,9 +200,9 @@ const SalesFunnelIntake = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black px-4 text-white">
         <div className="max-w-lg w-full p-8 text-center rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md">
-          <h1 className="text-2xl font-semibold">Form unavailable</h1>
+          <h1 className="text-2xl font-semibold">Invalid form link</h1>
           <p className="text-sm text-gray-400 mt-2">
-            This link may be expired or already used.
+            Please request a new lead form link from your workspace admin.
           </p>
         </div>
       </div>

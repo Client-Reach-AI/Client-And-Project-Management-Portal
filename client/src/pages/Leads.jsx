@@ -3,9 +3,10 @@ import { Copy, LinkIcon, Trash2, UploadCloudIcon, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useSelector } from 'react-redux';
 import { useWorkspaceContext } from '../context/workspaceContext';
-import { useClientIntakes, useLeadResources } from '../hooks/useQueries';
+import { useLeadIntakes, useLeadResources } from '../hooks/useQueries';
 import {
   useCreateFileSignature,
+  useDeleteLeadIntake,
   useCreateLeadResource,
   useDeleteLeadResource,
 } from '../hooks/useMutations';
@@ -117,7 +118,7 @@ const Leads = () => {
 
   const workspaceId = currentWorkspace?.id || null;
 
-  const { data: intakes = [] } = useClientIntakes(workspaceId, {
+  const { data: intakes = [] } = useLeadIntakes(workspaceId, {
     enabled: Boolean(workspaceId && isAdmin),
   });
   const { data: leadResources = [], isLoading: resourcesLoading } =
@@ -125,6 +126,7 @@ const Leads = () => {
       enabled: Boolean(workspaceId && isAdmin),
     });
   const { mutateAsync: createSignature } = useCreateFileSignature();
+  const { mutateAsync: deleteLeadIntake } = useDeleteLeadIntake();
   const { mutateAsync: createLeadResource } = useCreateLeadResource();
   const { mutateAsync: deleteLeadResource } = useDeleteLeadResource();
 
@@ -135,6 +137,7 @@ const Leads = () => {
   const [resourceName, setResourceName] = useState('');
   const [uploadingResource, setUploadingResource] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [deletingLeadId, setDeletingLeadId] = useState(null);
 
   const leads = useMemo(() => {
     return intakes
@@ -288,6 +291,31 @@ const Leads = () => {
     }
   };
 
+  const handleDeleteLead = async (event, lead) => {
+    event.stopPropagation();
+    if (!lead?.id || !workspaceId) return;
+
+    const confirmed = window.confirm(`Delete lead "${lead.name}"?`);
+    if (!confirmed) return;
+
+    setDeletingLeadId(lead.id);
+    try {
+      await deleteLeadIntake({
+        leadId: lead.id,
+        workspaceId,
+      });
+      if (selectedLeadId === lead.id) {
+        setSelectedLeadId(null);
+        setIsDetailsOpen(false);
+      }
+      toast.success('Lead deleted');
+    } catch (error) {
+      toast.error(error?.message || 'Failed to delete lead');
+    } finally {
+      setDeletingLeadId(null);
+    }
+  };
+
   if (!isAdmin) {
     return (
       <div className="p-6 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
@@ -393,6 +421,7 @@ const Leads = () => {
                     <th className="px-4 py-3 font-medium">Business Model</th>
                     <th className="px-4 py-3 font-medium">Source (src)</th>
                     <th className="px-4 py-3 font-medium">Submitted</th>
+                    <th className="px-4 py-3 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -400,7 +429,7 @@ const Leads = () => {
                     <tr>
                       <td
                         className="px-4 py-6 text-zinc-500 dark:text-zinc-400"
-                        colSpan={6}
+                        colSpan={7}
                       >
                         No leads submitted yet.
                       </td>
@@ -436,6 +465,20 @@ const Leads = () => {
                       </td>
                       <td className="px-4 py-3 text-zinc-500 dark:text-zinc-400">
                         {formatDateTime(lead.submittedAt)}
+                      </td>
+                      <td
+                        className="px-4 py-3"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          disabled={deletingLeadId === lead.id}
+                          onClick={(event) => handleDeleteLead(event, lead)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded border border-red-300 text-red-700 dark:border-red-800 dark:text-red-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                          <Trash2 className="size-3.5" />
+                          {deletingLeadId === lead.id ? 'Deleting...' : 'Delete'}
+                        </button>
                       </td>
                     </tr>
                   ))}

@@ -8,6 +8,7 @@ import {
   lookupInvitation,
   fetchClients,
   fetchClientIntakes,
+  fetchLeadIntakes,
   lookupClientIntake,
   fetchSharedFiles,
   fetchMessages,
@@ -18,6 +19,7 @@ import {
 import {
   clientKeys,
   intakeKeys,
+  leadIntakeKeys,
   leadResourceKeys,
   projectKeys,
   taskKeys,
@@ -88,6 +90,14 @@ export const useClientIntakes = (workspaceId, options = {}) =>
   useQuery({
     queryKey: intakeKeys.list(workspaceId),
     queryFn: () => fetchClientIntakes(workspaceId),
+    enabled: Boolean(workspaceId),
+    ...options,
+  });
+
+export const useLeadIntakes = (workspaceId, options = {}) =>
+  useQuery({
+    queryKey: leadIntakeKeys.list(workspaceId),
+    queryFn: () => fetchLeadIntakes(workspaceId),
     enabled: Boolean(workspaceId),
     ...options,
   });

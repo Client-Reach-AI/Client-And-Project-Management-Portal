@@ -5,6 +5,7 @@ import { and, desc, eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import {
   clientIntakes,
+  leadIntakes,
   clients,
   sharedFiles,
   workspaces,
@@ -212,7 +213,18 @@ router.post('/submit', async (req, res, next) => {
       ? { ...rawPayload, src: leadSourceKey }
       : rawPayload;
 
-    if (isLeadCapturePayload(payloadWithSource)) {
+    const intakeSource =
+      payloadWithSource?.source === 'PUBLIC' ? 'PUBLIC' : 'INTAKE';
+    const normalizedContactName =
+      payloadWithSource?.contact_name ||
+      payloadWithSource?.name ||
+      payloadWithSource?.clientName ||
+      null;
+    const normalizedServiceType =
+      payloadWithSource?.service_type || payloadWithSource?.business_model || null;
+
+    const isLeadSubmission = isLeadCapturePayload(payloadWithSource);
+    if (isLeadSubmission) {
       const leadName = toSafeString(payloadWithSource?.name);
       const leadEmail = toSafeString(payloadWithSource?.email);
 
@@ -246,19 +258,49 @@ router.post('/submit', async (req, res, next) => {
           message: 'Failed to send resource email. Please try again.',
         });
       }
+
+      const leadId = generateId('lead');
+      await db.insert(leadIntakes).values({
+        id: leadId,
+        workspaceId: intake.workspaceId,
+        intakeId: intake.id,
+        status: 'SUBMITTED',
+        name: leadName || 'Unknown',
+        email: leadEmail,
+        phone: toSafeString(payloadWithSource?.phone) || null,
+        businessModel: toSafeString(payloadWithSource?.business_model) || null,
+        sourceKey: leadSourceKey,
+        biggestBottleneck:
+          toSafeString(payloadWithSource?.biggest_bottleneck) || null,
+        payload: payloadWithSource,
+        submittedAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      await db
+        .update(clientIntakes)
+        .set({
+          serviceType: normalizedServiceType,
+          companyName:
+            payloadWithSource?.company_name || payloadWithSource?.company || null,
+          contactName: normalizedContactName,
+          contactRole: payloadWithSource?.contact_role || null,
+          industry: payloadWithSource?.industry || null,
+          businessDetails: payloadWithSource?.business_details || {},
+          serviceResponses: payloadWithSource?.service_responses || {},
+          uploadedFiles: payloadWithSource?.uploaded_files || [],
+          calendlyEventId: payloadWithSource?.calendly_event_id || null,
+          payload: payloadWithSource,
+          status: 'LEAD_SUBMITTED',
+          submittedAt: new Date(),
+          clientId: intake.clientId || null,
+        })
+        .where(eq(clientIntakes.id, intake.id));
+
+      return res.json({ message: 'Intake submitted', leadId });
     }
 
     let clientId = intake.clientId || null;
-
-    const intakeSource =
-      payloadWithSource?.source === 'PUBLIC' ? 'PUBLIC' : 'INTAKE';
-    const normalizedContactName =
-      payloadWithSource?.contact_name ||
-      payloadWithSource?.name ||
-      payloadWithSource?.clientName ||
-      null;
-    const normalizedServiceType =
-      payloadWithSource?.service_type || payloadWithSource?.business_model || null;
 
     if (!clientId) {
       const newClientId = generateId('client');
@@ -344,6 +386,83 @@ router.post('/submit', async (req, res, next) => {
 });
 
 router.use(requireAuth);
+
+router.get('/leads', async (req, res, next) => {
+  try {
+    const { workspaceId } = req.query;
+    if (!workspaceId) {
+      return res.status(400).json({ message: 'workspaceId is required' });
+    }
+
+    const admin =
+      req.user.role === 'ADMIN' ||
+      (await isWorkspaceAdmin(req.user.id, workspaceId));
+    if (!admin) return res.status(403).json({ message: 'Forbidden' });
+
+    const leads = await db
+      .select()
+      .from(leadIntakes)
+      .where(eq(leadIntakes.workspaceId, workspaceId))
+      .orderBy(desc(leadIntakes.submittedAt));
+
+    res.json(
+      leads.map((lead) => ({
+        ...lead,
+        payload: lead.payload || {
+          name: lead.name,
+          email: lead.email,
+          phone: lead.phone,
+          business_model: lead.businessModel,
+          src: lead.sourceKey,
+          biggest_bottleneck: lead.biggestBottleneck,
+        },
+      }))
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete('/leads/:leadId', async (req, res, next) => {
+  try {
+    const { leadId } = req.params;
+    if (!leadId) {
+      return res.status(400).json({ message: 'leadId is required' });
+    }
+
+    const [lead] = await db
+      .select()
+      .from(leadIntakes)
+      .where(eq(leadIntakes.id, leadId))
+      .limit(1);
+
+    if (!lead) {
+      return res.status(404).json({ message: 'Lead not found' });
+    }
+
+    const admin =
+      req.user.role === 'ADMIN' ||
+      (await isWorkspaceAdmin(req.user.id, lead.workspaceId));
+    if (!admin) return res.status(403).json({ message: 'Forbidden' });
+
+    await db.transaction(async (tx) => {
+      await tx.delete(leadIntakes).where(eq(leadIntakes.id, lead.id));
+      if (lead.intakeId) {
+        await tx
+          .delete(clientIntakes)
+          .where(eq(clientIntakes.id, lead.intakeId));
+      }
+    });
+
+    res.json({
+      message: 'Lead deleted',
+      id: lead.id,
+      workspaceId: lead.workspaceId,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.get('/resources', async (req, res, next) => {
   try {
@@ -514,6 +633,43 @@ router.delete('/resources/:resourceId', async (req, res, next) => {
       message: 'Lead resource deleted',
       id: resource.id,
       workspaceId: resource.workspaceId,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete('/:intakeId', async (req, res, next) => {
+  try {
+    const { intakeId } = req.params;
+    if (!intakeId) {
+      return res.status(400).json({ message: 'intakeId is required' });
+    }
+
+    const [intake] = await db
+      .select()
+      .from(clientIntakes)
+      .where(eq(clientIntakes.id, intakeId))
+      .limit(1);
+
+    if (!intake) {
+      return res.status(404).json({ message: 'Lead intake not found' });
+    }
+
+    const admin =
+      req.user.role === 'ADMIN' ||
+      (await isWorkspaceAdmin(req.user.id, intake.workspaceId));
+    if (!admin) return res.status(403).json({ message: 'Forbidden' });
+
+    await db.transaction(async (tx) => {
+      await tx.delete(leadIntakes).where(eq(leadIntakes.intakeId, intake.id));
+      await tx.delete(clientIntakes).where(eq(clientIntakes.id, intake.id));
+    });
+
+    res.json({
+      message: 'Lead deleted',
+      id: intake.id,
+      workspaceId: intake.workspaceId,
     });
   } catch (error) {
     next(error);

@@ -95,7 +95,8 @@ const SimpleLeadIntake = () => {
     }
 
     if (!normalizedSrc) {
-      nextErrors.src = 'This link is missing src. Please request a proper link.';
+      nextErrors.src =
+        'This link is missing src. Please request a proper link.';
     }
 
     setErrors(nextErrors);
@@ -118,13 +119,14 @@ const SimpleLeadIntake = () => {
           email: formData.email,
         },
       });
-      toast.success('Your details were submitted successfully.', { id: toastId });
+      toast.success('Your details were submitted successfully.', {
+        id: toastId,
+      });
       setStep('success');
     } catch (error) {
-      toast.error(
-        error?.message || 'Something went wrong. Please try again.',
-        { id: toastId }
-      );
+      toast.error(error?.message || 'Something went wrong. Please try again.', {
+        id: toastId,
+      });
     }
   };
 
@@ -153,8 +155,10 @@ const SimpleLeadIntake = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black px-4 text-white">
         <div className="max-w-lg w-full p-8 text-center rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md">
-          <h1 className="text-2xl font-semibold">Form unavailable</h1>
-          <p className="text-sm text-gray-400 mt-2">{publicInitError}</p>
+          <h1 className="text-2xl font-semibold">Invalid form link</h1>
+          <p className="text-sm text-gray-400 mt-2">
+            Please request a new lead form link from your workspace admin.
+          </p>
         </div>
       </div>
     );
@@ -172,9 +176,9 @@ const SimpleLeadIntake = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black px-4 text-white">
         <div className="max-w-lg w-full p-8 text-center rounded-3xl border border-white/10 bg-white/5 backdrop-blur-md">
-          <h1 className="text-2xl font-semibold">Form unavailable</h1>
+          <h1 className="text-2xl font-semibold">Invalid form link</h1>
           <p className="text-sm text-gray-400 mt-2">
-            This link may be expired or already used.
+            Please request a new lead form.
           </p>
         </div>
       </div>
@@ -250,9 +254,7 @@ const SimpleLeadIntake = () => {
                   } rounded-xl px-4 py-3 focus:outline-none focus:border-[#14A3F6] transition-all hover:bg-white/10`}
                   placeholder="john@example.com"
                   value={formData.email}
-                  onChange={(event) =>
-                    updateField('email', event.target.value)
-                  }
+                  onChange={(event) => updateField('email', event.target.value)}
                 />
                 {errors.email && (
                   <p className="text-red-500 text-xs mt-1">{errors.email}</p>
@@ -309,7 +311,9 @@ const SimpleLeadIntake = () => {
       </div>
 
       <div className="mt-12 text-center text-gray-600 text-xs">
-        <p>&copy; {new Date().getFullYear()} ClientReach.ai. All rights reserved.</p>
+        <p>
+          &copy; {new Date().getFullYear()} ClientReach.ai. All rights reserved.
+        </p>
       </div>
     </div>
   );

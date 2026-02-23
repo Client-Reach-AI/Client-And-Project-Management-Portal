@@ -118,6 +118,11 @@ export const fetchClientIntakes = async (workspaceId) =>
     `/api/client-intakes?workspaceId=${encodeURIComponent(workspaceId)}`
   );
 
+export const fetchLeadIntakes = async (workspaceId) =>
+  apiFetch(
+    `/api/client-intakes/leads?workspaceId=${encodeURIComponent(workspaceId)}`
+  );
+
 export const createClientIntake = async (payload) =>
   apiFetch('/api/client-intakes', {
     method: 'POST',
@@ -137,6 +142,16 @@ export const submitClientIntake = async (payload) =>
   apiFetch('/api/client-intakes/submit', {
     method: 'POST',
     body: JSON.stringify(payload),
+  });
+
+export const deleteClientIntake = async (intakeId) =>
+  apiFetch(`/api/client-intakes/${encodeURIComponent(intakeId)}`, {
+    method: 'DELETE',
+  });
+
+export const deleteLeadIntake = async (leadId) =>
+  apiFetch(`/api/client-intakes/leads/${encodeURIComponent(leadId)}`, {
+    method: 'DELETE',
   });
 
 export const fetchLeadResources = async (workspaceId) =>

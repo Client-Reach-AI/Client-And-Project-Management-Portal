@@ -15,6 +15,8 @@ import {
   createClient,
   updateClient,
   createClientIntake,
+  deleteClientIntake,
+  deleteLeadIntake,
   submitClientIntake,
   updateProject,
   updateTask,
@@ -35,6 +37,7 @@ import {
 import {
   clientKeys,
   intakeKeys,
+  leadIntakeKeys,
   leadResourceKeys,
   projectKeys,
   taskKeys,
@@ -385,6 +388,36 @@ export const useCreateClientIntake = () => {
       if (variables?.workspaceId) {
         queryClient.invalidateQueries({
           queryKey: intakeKeys.list(variables.workspaceId),
+        });
+      }
+    },
+  });
+};
+
+export const useDeleteClientIntake = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ intakeId }) => deleteClientIntake(intakeId),
+    onSuccess: (deleted, variables) => {
+      const workspaceId = deleted?.workspaceId || variables?.workspaceId;
+      if (workspaceId) {
+        queryClient.invalidateQueries({
+          queryKey: intakeKeys.list(workspaceId),
+        });
+      }
+    },
+  });
+};
+
+export const useDeleteLeadIntake = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ leadId }) => deleteLeadIntake(leadId),
+    onSuccess: (deleted, variables) => {
+      const workspaceId = deleted?.workspaceId || variables?.workspaceId;
+      if (workspaceId) {
+        queryClient.invalidateQueries({
+          queryKey: leadIntakeKeys.list(workspaceId),
         });
       }
     },

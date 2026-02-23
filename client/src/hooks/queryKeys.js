@@ -26,6 +26,10 @@ export const leadResourceKeys = {
   list: (workspaceId) => ['leadResources', workspaceId],
 };
 
+export const leadIntakeKeys = {
+  list: (workspaceId) => ['leadIntakes', workspaceId],
+};
+
 export const fileKeys = {
   list: (workspaceId, clientId, projectId) => [
     'sharedFiles',

@@ -109,6 +109,33 @@ export const clientIntakes = pgTable('client_intakes', {
     .notNull(),
 });
 
+export const leadIntakes = pgTable('lead_intakes', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id')
+    .notNull()
+    .references(() => workspaces.id),
+  intakeId: text('intake_id')
+    .notNull()
+    .references(() => clientIntakes.id),
+  status: text('status').default('SUBMITTED').notNull(),
+  name: text('name').notNull(),
+  email: text('email').notNull(),
+  phone: text('phone'),
+  businessModel: text('business_model'),
+  sourceKey: text('source_key'),
+  biggestBottleneck: text('biggest_bottleneck'),
+  payload: jsonb('payload').default({}),
+  submittedAt: timestamp('submitted_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
 export const projects = pgTable('projects', {
   id: text('id').primaryKey(),
   workspaceId: text('workspace_id')
