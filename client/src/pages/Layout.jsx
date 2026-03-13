@@ -6,10 +6,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import { loadTheme } from '../features/themeSlice';
 import { Loader2Icon } from 'lucide-react';
 import { useWorkspaceContext } from '../context/workspaceContext';
+import { useInactivityLogout } from '../hooks/useInactivityLogout';
 
 const Layout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, initialized } = useSelector((state) => state.auth);
+
+  useInactivityLogout(!!user);
   const { loading, error } = useWorkspaceContext();
   const dispatch = useDispatch();
 
