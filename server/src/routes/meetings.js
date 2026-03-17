@@ -22,7 +22,10 @@ const BOOKING_TIMEZONE = 'Europe/London';
 const toSafeString = (value) => (typeof value === 'string' ? value.trim() : '');
 
 const buildBookingLink = (token) => {
-  const baseUrl = process.env.ONBOARDING_PORTAL_URL || 'http://localhost:3000';
+  const baseUrl =
+    process.env.APP_BASE_URL ||
+    process.env.ONBOARDING_PORTAL_URL ||
+    'http://localhost:5173';
   return `${baseUrl}/booking?token=${token}`;
 };
 

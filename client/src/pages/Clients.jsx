@@ -6,26 +6,10 @@ import { useNavigate } from 'react-router-dom';
 import { useWorkspaceContext } from '../context/workspaceContext';
 import { useClientIntakes, useClients } from '../hooks/useQueries';
 import { useCreateClient, useCreateClientIntake } from '../hooks/useMutations';
+import ClientProfileForm, {
+  initialClientProfileForm,
+} from '../components/ClientProfileForm';
 import CreateProjectDialog from '../components/CreateProjectDialog';
-
-const initialClientForm = {
-  name: '',
-  company: '',
-  email: '',
-  phone: '',
-  website: '',
-  industry: '',
-  contactName: '',
-  address: '',
-  goals: '',
-  budget: '',
-  timeline: '',
-  targetAudience: '',
-  brandGuidelines: '',
-  competitors: '',
-  successMetrics: '',
-  notes: '',
-};
 
 const getIntakeDisplayName = (payload = {}) =>
   payload.contact_name ||
@@ -113,7 +97,7 @@ const Clients = () => {
   const isAdmin = user?.role === 'ADMIN' || memberRole === 'ADMIN';
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [formData, setFormData] = useState(initialClientForm);
+  const [formData, setFormData] = useState(initialClientProfileForm);
   const [selectedIntake, setSelectedIntake] = useState(null);
   const [showProjectDialog, setShowProjectDialog] = useState(false);
   const [selectedDetails, setSelectedDetails] = useState(null);
@@ -212,7 +196,7 @@ const Clients = () => {
         },
       });
       toast.success('Client created');
-      setFormData(initialClientForm);
+      setFormData(initialClientProfileForm);
       setIsCreateOpen(false);
     } catch (error) {
       toast.error(error?.message || 'Failed to create client');
@@ -253,14 +237,18 @@ const Clients = () => {
     try {
       if (navigator?.clipboard?.writeText) {
         await navigator.clipboard.writeText(publicIntakeUrl);
-        toast.success('Public intake link copied');
+        toast.success('Lead intake link copied');
       } else {
-        toast.success('Public intake link ready');
+        toast.success('Lead intake link ready');
       }
     } catch (error) {
       console.error('Clipboard error:', error);
-      toast.error('Failed to copy public intake link');
+      toast.error('Failed to copy lead intake link');
     }
+  };
+
+  const handleClientFormChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const openProjectFromIntake = async (intake) => {
@@ -433,222 +421,13 @@ const Clients = () => {
             Capture the client vision and requirements for future projects.
           </p>
 
-          <form onSubmit={handleCreateClient} className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm">Client Name</label>
-                <input
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, name: e.target.value }))
-                  }
-                  className="w-full mt-2 px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 text-sm"
-                  required
-                />
-              </div>
-              <div>
-                <label className="text-sm">Company</label>
-                <input
-                  value={formData.company}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      company: e.target.value,
-                    }))
-                  }
-                  className="w-full mt-2 px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-sm">Primary Contact</label>
-                <input
-                  value={formData.contactName}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      contactName: e.target.value,
-                    }))
-                  }
-                  className="w-full mt-2 px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-sm">Email</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, email: e.target.value }))
-                  }
-                  className="w-full mt-2 px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-sm">Phone</label>
-                <input
-                  value={formData.phone}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, phone: e.target.value }))
-                  }
-                  className="w-full mt-2 px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-sm">Website</label>
-                <input
-                  value={formData.website}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      website: e.target.value,
-                    }))
-                  }
-                  className="w-full mt-2 px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-sm">Industry</label>
-                <input
-                  value={formData.industry}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      industry: e.target.value,
-                    }))
-                  }
-                  className="w-full mt-2 px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-sm">Address</label>
-                <input
-                  value={formData.address}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      address: e.target.value,
-                    }))
-                  }
-                  className="w-full mt-2 px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 text-sm"
-                />
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm">Project Goals</label>
-                <textarea
-                  value={formData.goals}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, goals: e.target.value }))
-                  }
-                  className="w-full mt-2 px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 text-sm h-24"
-                />
-              </div>
-              <div>
-                <label className="text-sm">Target Audience</label>
-                <textarea
-                  value={formData.targetAudience}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      targetAudience: e.target.value,
-                    }))
-                  }
-                  className="w-full mt-2 px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 text-sm h-24"
-                />
-              </div>
-              <div>
-                <label className="text-sm">Budget</label>
-                <input
-                  value={formData.budget}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, budget: e.target.value }))
-                  }
-                  className="w-full mt-2 px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-sm">Timeline</label>
-                <input
-                  value={formData.timeline}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      timeline: e.target.value,
-                    }))
-                  }
-                  className="w-full mt-2 px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-sm">Brand Guidelines</label>
-                <textarea
-                  value={formData.brandGuidelines}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      brandGuidelines: e.target.value,
-                    }))
-                  }
-                  className="w-full mt-2 px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 text-sm h-24"
-                />
-              </div>
-              <div>
-                <label className="text-sm">Competitors</label>
-                <textarea
-                  value={formData.competitors}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      competitors: e.target.value,
-                    }))
-                  }
-                  className="w-full mt-2 px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 text-sm h-24"
-                />
-              </div>
-              <div>
-                <label className="text-sm">Success Metrics</label>
-                <textarea
-                  value={formData.successMetrics}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      successMetrics: e.target.value,
-                    }))
-                  }
-                  className="w-full mt-2 px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 text-sm h-24"
-                />
-              </div>
-              <div>
-                <label className="text-sm">Notes</label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, notes: e.target.value }))
-                  }
-                  className="w-full mt-2 px-3 py-2 rounded border border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 text-sm h-24"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setIsCreateOpen(false)}
-                className="px-4 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isPending}
-                className="px-4 py-2 text-sm bg-linear-to-br from-blue-500 to-blue-600 text-white rounded"
-              >
-                {isPending ? 'Saving...' : 'Save Client'}
-              </button>
-            </div>
-          </form>
+          <ClientProfileForm
+            formData={formData}
+            onFieldChange={handleClientFormChange}
+            onSubmit={handleCreateClient}
+            onCancel={() => setIsCreateOpen(false)}
+            isSubmitting={isPending}
+          />
         </div>
       )}
 
@@ -765,7 +544,7 @@ const Clients = () => {
                 </span>
               </div>
 
-              <div className="text-xs text-zinc-600 dark:text-zinc-400 space-y-1 break-words">
+              <div className="text-xs text-zinc-600 dark:text-zinc-400 space-y-1 wrap-break-word">
                 {client.email && <div>Email: {client.email}</div>}
                 {client.phone && <div>Phone: {client.phone}</div>}
                 {client.website && <div>Website: {client.website}</div>}

@@ -18,8 +18,11 @@ const router = Router();
 const LEAD_RESOURCE_TYPE = 'LEAD_RESOURCE';
 
 const buildIntakeLink = (token) => {
-  const baseUrl = process.env.ONBOARDING_PORTAL_URL || 'http://localhost:3000';
-  return `${baseUrl}/intake?token=${token}`;
+  const baseUrl =
+    process.env.APP_BASE_URL ||
+    process.env.ONBOARDING_PORTAL_URL ||
+    'http://localhost:5173';
+  return `${baseUrl}/client-intake?token=${token}`;
 };
 
 const createIntakeRecord = async ({ workspaceId, clientId = null }) => {
@@ -207,9 +210,12 @@ router.post('/submit', async (req, res, next) => {
       payloadWithSource?.source === 'PUBLIC' ? 'PUBLIC' : 'INTAKE';
     const normalizedContactName =
       payloadWithSource?.contact_name ||
+      payloadWithSource?.contactName ||
       payloadWithSource?.name ||
       payloadWithSource?.clientName ||
       null;
+    const normalizedContactRole =
+      payloadWithSource?.contact_role || payloadWithSource?.contactRole || null;
     const normalizedServiceType =
       payloadWithSource?.service_type || payloadWithSource?.business_model || null;
 
@@ -274,7 +280,7 @@ router.post('/submit', async (req, res, next) => {
           companyName:
             payloadWithSource?.company_name || payloadWithSource?.company || null,
           contactName: normalizedContactName,
-          contactRole: payloadWithSource?.contact_role || null,
+          contactRole: normalizedContactRole,
           industry: payloadWithSource?.industry || null,
           businessDetails: payloadWithSource?.business_details || {},
           serviceResponses: payloadWithSource?.service_responses || {},
@@ -311,7 +317,7 @@ router.post('/submit', async (req, res, next) => {
         name,
         company: payloadWithSource?.company_name || payloadWithSource?.company || null,
         contactName: normalizedContactName,
-        contactRole: payloadWithSource?.contact_role || null,
+        contactRole: normalizedContactRole,
         email: payloadWithSource?.email || null,
         phone: payloadWithSource?.phone || null,
         website,
@@ -328,7 +334,9 @@ router.post('/submit', async (req, res, next) => {
           sourceKey: leadSourceKey,
           businessModel: payloadWithSource?.business_model || null,
           biggestBottleneck: payloadWithSource?.biggest_bottleneck || null,
-          contactRole: payloadWithSource?.contact_role || null,
+          contactName: normalizedContactName,
+          contactRole: normalizedContactRole,
+          address: payloadWithSource?.address || null,
           businessDetails: payloadWithSource?.business_details || null,
           serviceResponses: payloadWithSource?.service_responses || null,
           uploadedFiles: payloadWithSource?.uploaded_files || null,
@@ -356,7 +364,7 @@ router.post('/submit', async (req, res, next) => {
         companyName:
           payloadWithSource?.company_name || payloadWithSource?.company || null,
         contactName: normalizedContactName,
-        contactRole: payloadWithSource?.contact_role || null,
+        contactRole: normalizedContactRole,
         industry: payloadWithSource?.industry || null,
         businessDetails: payloadWithSource?.business_details || {},
         serviceResponses: payloadWithSource?.service_responses || {},
