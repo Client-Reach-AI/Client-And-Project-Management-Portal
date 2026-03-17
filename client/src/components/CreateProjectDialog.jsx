@@ -16,6 +16,7 @@ const DEFAULT_FORM_DATA = {
   team_lead: '',
   progress: 0,
   clientId: '',
+  leadId: '',
 };
 
 const CreateProjectDialog = ({
@@ -130,6 +131,7 @@ const CreateProjectDialog = ({
         payload: {
           workspaceId: currentWorkspace.id,
           clientId: formData.clientId || null,
+          leadId: formData.leadId || null,
           createClientPortal: Boolean(formData.clientId && createClientPortal),
           name: formData.name,
           description: formData.description,

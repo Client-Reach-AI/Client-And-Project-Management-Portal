@@ -13,7 +13,31 @@ if (!connectionString) {
 
 const url = new URL(connectionString);
 const useSupabase = url.hostname.includes('supabase.co');
-const useSsl = useSupabase || url.searchParams.get('sslmode') === 'require';
+
+const sslMode = (process.env.DB_SSL_MODE || url.searchParams.get('sslmode') || '')
+  .trim()
+  .toLowerCase();
+
+const isLocalHost = (hostname) =>
+  ['localhost', '127.0.0.1', '::1'].includes(hostname);
+
+const shouldUseSsl = () => {
+  if (['disable', 'false', '0'].includes(sslMode)) {
+    return false;
+  }
+
+  if (['require', 'verify-ca', 'verify-full', 'true', '1'].includes(sslMode)) {
+    return true;
+  }
+
+  if (useSupabase) {
+    return true;
+  }
+
+  return !isLocalHost(url.hostname);
+};
+
+const useSsl = shouldUseSsl();
 
 let host = url.hostname;
 

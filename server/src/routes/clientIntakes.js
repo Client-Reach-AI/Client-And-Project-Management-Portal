@@ -84,6 +84,16 @@ const resolveLeadSourceKey = (payload = {}) => {
   return explicitSrc || businessModelSrc || null;
 };
 
+const DEFAULT_LEAD_STATUS = 'NEW';
+const ALLOWED_LEAD_STATUSES = [
+  'NEW',
+  'CONTACTED',
+  'QUALIFIED',
+  'PROPOSAL_SENT',
+  'WON',
+  'LOST',
+];
+
 const findLeadResourceBySource = async ({ workspaceId, sourceKey }) => {
   if (!workspaceId || !sourceKey) return null;
 
@@ -261,6 +271,7 @@ router.post('/submit', async (req, res, next) => {
         workspaceId: intake.workspaceId,
         intakeId: intake.id,
         status: 'SUBMITTED',
+        leadStatus: DEFAULT_LEAD_STATUS,
         name: leadName || 'Unknown',
         email: leadEmail,
         phone: toSafeString(payloadWithSource?.phone) || null,
@@ -385,6 +396,90 @@ router.post('/submit', async (req, res, next) => {
 
 router.use(requireAuth);
 
+router.post('/leads', async (req, res, next) => {
+  try {
+    const {
+      workspaceId,
+      name,
+      email,
+      phone,
+      businessModel,
+      sourceKey,
+      biggestBottleneck,
+    } = req.body || {};
+
+    if (!workspaceId || !toSafeString(name) || !toSafeString(email)) {
+      return res
+        .status(400)
+        .json({ message: 'workspaceId, name and email are required' });
+    }
+
+    const admin =
+      req.user.role === 'ADMIN' ||
+      (await isWorkspaceAdmin(req.user.id, workspaceId));
+    if (!admin) return res.status(403).json({ message: 'Forbidden' });
+
+    const submittedAt = new Date();
+    const manualLeadSourceKey = normalizeSourceKey(sourceKey || businessModel);
+    const payload = {
+      source: 'MANUAL',
+      name: toSafeString(name),
+      email: toSafeString(email),
+      phone: toSafeString(phone) || null,
+      business_model: toSafeString(businessModel) || null,
+      src: manualLeadSourceKey,
+      biggest_bottleneck: toSafeString(biggestBottleneck) || null,
+    };
+
+    const intakeId = generateId('intake');
+    const token = crypto.randomBytes(24).toString('hex');
+    await db.insert(clientIntakes).values({
+      id: intakeId,
+      workspaceId,
+      clientId: null,
+      token,
+      status: 'LEAD_SUBMITTED',
+      serviceType: payload.business_model,
+      contactName: payload.name,
+      payload,
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14),
+      submittedAt,
+    });
+
+    const leadId = generateId('lead');
+    await db.insert(leadIntakes).values({
+      id: leadId,
+      workspaceId,
+      intakeId,
+      status: 'SUBMITTED',
+      leadStatus: DEFAULT_LEAD_STATUS,
+      name: payload.name,
+      email: payload.email,
+      phone: payload.phone,
+      businessModel: payload.business_model,
+      sourceKey: payload.src,
+      biggestBottleneck: payload.biggest_bottleneck,
+      payload,
+      submittedAt,
+      updatedAt: submittedAt,
+    });
+
+    const [created] = await db
+      .select()
+      .from(leadIntakes)
+      .where(eq(leadIntakes.id, leadId))
+      .limit(1);
+
+    res.status(201).json({
+      ...created,
+      leadStatus: created?.leadStatus || DEFAULT_LEAD_STATUS,
+      payload: created?.payload || payload,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get('/leads', async (req, res, next) => {
   try {
     const { workspaceId } = req.query;
@@ -406,6 +501,9 @@ router.get('/leads', async (req, res, next) => {
     res.json(
       leads.map((lead) => ({
         ...lead,
+        leadStatus: lead.leadStatus || DEFAULT_LEAD_STATUS,
+        clientId: lead.clientId || null,
+        projectId: lead.projectId || null,
         payload: lead.payload || {
           name: lead.name,
           email: lead.email,
@@ -416,6 +514,59 @@ router.get('/leads', async (req, res, next) => {
         },
       }))
     );
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch('/leads/:leadId/status', async (req, res, next) => {
+  try {
+    const { leadId } = req.params;
+    const nextStatus = toSafeString(req.body?.leadStatus).toUpperCase();
+
+    if (!leadId) {
+      return res.status(400).json({ message: 'leadId is required' });
+    }
+
+    if (!ALLOWED_LEAD_STATUSES.includes(nextStatus)) {
+      return res.status(400).json({
+        message: `leadStatus must be one of: ${ALLOWED_LEAD_STATUSES.join(', ')}`,
+      });
+    }
+
+    const [lead] = await db
+      .select()
+      .from(leadIntakes)
+      .where(eq(leadIntakes.id, leadId))
+      .limit(1);
+
+    if (!lead) {
+      return res.status(404).json({ message: 'Lead not found' });
+    }
+
+    const admin =
+      req.user.role === 'ADMIN' ||
+      (await isWorkspaceAdmin(req.user.id, lead.workspaceId));
+    if (!admin) return res.status(403).json({ message: 'Forbidden' });
+
+    await db
+      .update(leadIntakes)
+      .set({
+        leadStatus: nextStatus,
+        updatedAt: new Date(),
+      })
+      .where(eq(leadIntakes.id, leadId));
+
+    const [updated] = await db
+      .select()
+      .from(leadIntakes)
+      .where(eq(leadIntakes.id, leadId))
+      .limit(1);
+
+    res.json({
+      ...updated,
+      leadStatus: updated?.leadStatus || DEFAULT_LEAD_STATUS,
+    });
   } catch (error) {
     next(error);
   }

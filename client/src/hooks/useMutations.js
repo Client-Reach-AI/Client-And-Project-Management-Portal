@@ -13,6 +13,7 @@ import {
   login,
   declineInvitation,
   createClient,
+  createLeadIntake,
   updateClient,
   createClientIntake,
   deleteClientIntake,
@@ -33,6 +34,7 @@ import {
   createInvoiceCheckoutSession,
   createLeadResource,
   deleteLeadResource,
+  updateLeadStatus,
   createPublicMeetingLink,
   submitMeetingBooking,
   deleteMeeting,
@@ -141,6 +143,11 @@ export const useCreateProject = () => {
         queryClient.invalidateQueries({
           queryKey: workspaceKeys.detail(workspaceId),
         });
+        if (variables?.payload?.leadId) {
+          queryClient.invalidateQueries({
+            queryKey: leadIntakeKeys.list(workspaceId),
+          });
+        }
       }
     },
   });
@@ -354,13 +361,33 @@ export const useCreateClient = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createClient,
-    onSuccess: (created) => {
+    onSuccess: (created, variables) => {
       if (created?.workspaceId) {
         queryClient.invalidateQueries({
           queryKey: clientKeys.list(created.workspaceId),
         });
         queryClient.invalidateQueries({
           queryKey: workspaceKeys.detail(created.workspaceId),
+        });
+        if (variables?.leadId) {
+          queryClient.invalidateQueries({
+            queryKey: leadIntakeKeys.list(created.workspaceId),
+          });
+        }
+      }
+    },
+  });
+};
+
+export const useCreateLeadIntake = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createLeadIntake,
+    onSuccess: (created, variables) => {
+      const workspaceId = created?.workspaceId || variables?.workspaceId;
+      if (workspaceId) {
+        queryClient.invalidateQueries({
+          queryKey: leadIntakeKeys.list(workspaceId),
         });
       }
     },
@@ -419,6 +446,21 @@ export const useDeleteLeadIntake = () => {
     mutationFn: ({ leadId }) => deleteLeadIntake(leadId),
     onSuccess: (deleted, variables) => {
       const workspaceId = deleted?.workspaceId || variables?.workspaceId;
+      if (workspaceId) {
+        queryClient.invalidateQueries({
+          queryKey: leadIntakeKeys.list(workspaceId),
+        });
+      }
+    },
+  });
+};
+
+export const useUpdateLeadStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ leadId, payload }) => updateLeadStatus(leadId, payload),
+    onSuccess: (updated, variables) => {
+      const workspaceId = updated?.workspaceId || variables?.workspaceId;
       if (workspaceId) {
         queryClient.invalidateQueries({
           queryKey: leadIntakeKeys.list(workspaceId),

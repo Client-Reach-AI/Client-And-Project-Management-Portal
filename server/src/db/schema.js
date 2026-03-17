@@ -125,7 +125,10 @@ export const leadIntakes = pgTable('lead_intakes', {
   intakeId: text('intake_id')
     .notNull()
     .references(() => clientIntakes.id),
+  clientId: text('client_id').references(() => clients.id),
+  projectId: text('project_id').references(() => projects.id),
   status: text('status').default('SUBMITTED').notNull(),
+  leadStatus: text('lead_status').default('NEW').notNull(),
   name: text('name').notNull(),
   email: text('email').notNull(),
   phone: text('phone'),

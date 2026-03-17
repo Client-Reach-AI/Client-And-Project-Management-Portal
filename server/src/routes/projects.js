@@ -6,6 +6,7 @@ import {
   clientIntakes,
   clients,
   invitations,
+  leadIntakes,
   projectMembers,
   projects,
   tasks,
@@ -370,6 +371,7 @@ router.post('/', async (req, res, next) => {
       progress,
       clientId,
       createClientPortal,
+      leadId,
     } = req.body;
 
     if (!workspaceId || !name || !priority || !status) {
@@ -383,11 +385,26 @@ router.post('/', async (req, res, next) => {
       (await isWorkspaceAdmin(req.user.id, workspaceId));
     if (!admin) return res.status(403).json({ message: 'Forbidden' });
 
-    if (clientId) {
+    let lead = null;
+    if (leadId) {
+      [lead] = await db
+        .select()
+        .from(leadIntakes)
+        .where(eq(leadIntakes.id, leadId))
+        .limit(1);
+
+      if (!lead || lead.workspaceId !== workspaceId) {
+        return res.status(400).json({ message: 'Invalid leadId' });
+      }
+    }
+
+    const resolvedClientId = clientId || lead?.clientId || null;
+
+    if (resolvedClientId) {
       const [client] = await db
         .select()
         .from(clients)
-        .where(eq(clients.id, clientId))
+        .where(eq(clients.id, resolvedClientId))
         .limit(1);
 
       if (!client || client.workspaceId !== workspaceId) {
@@ -400,7 +417,7 @@ router.post('/', async (req, res, next) => {
     await db.insert(projects).values({
       id: projectId,
       workspaceId,
-      clientId: clientId || null,
+      clientId: resolvedClientId,
       name,
       description: description || null,
       priority,
@@ -412,17 +429,28 @@ router.post('/', async (req, res, next) => {
       updatedAt: new Date(),
     });
 
+    if (leadId) {
+      await db
+        .update(leadIntakes)
+        .set({
+          clientId: resolvedClientId,
+          projectId,
+          updatedAt: new Date(),
+        })
+        .where(eq(leadIntakes.id, leadId));
+    }
+
     const [created] = await db
       .select()
       .from(projects)
       .where(eq(projects.id, projectId));
 
     let clientPortal = null;
-    if (created && clientId && createClientPortal) {
+    if (created && resolvedClientId && createClientPortal) {
       const [client] = await db
         .select()
         .from(clients)
-        .where(eq(clients.id, clientId))
+        .where(eq(clients.id, resolvedClientId))
         .limit(1);
 
       if (client) {

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { and, eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { clients, workspaceMembers } from '../db/schema.js';
+import { clients, leadIntakes, workspaceMembers } from '../db/schema.js';
 import { generateId } from '../lib/ids.js';
 import { isWorkspaceAdmin } from '../lib/permissions.js';
 
@@ -87,6 +87,7 @@ router.post('/', async (req, res, next) => {
       uploadedFiles,
       calendlyEventId,
       details,
+      leadId,
     } = req.body;
 
     if (!workspaceId || !name) {
@@ -99,6 +100,26 @@ router.post('/', async (req, res, next) => {
       req.user.role === 'ADMIN' ||
       (await isWorkspaceAdmin(req.user.id, workspaceId));
     if (!admin) return res.status(403).json({ message: 'Forbidden' });
+
+    let lead = null;
+    if (leadId) {
+      [lead] = await db
+        .select()
+        .from(leadIntakes)
+        .where(eq(leadIntakes.id, leadId))
+        .limit(1);
+
+      if (!lead || lead.workspaceId !== workspaceId) {
+        return res.status(400).json({ message: 'Invalid leadId' });
+      }
+
+      if (lead.clientId) {
+        return res.status(409).json({
+          message: 'This lead is already linked to a client',
+          clientId: lead.clientId,
+        });
+      }
+    }
 
     const clientId = generateId('client');
 
@@ -121,6 +142,16 @@ router.post('/', async (req, res, next) => {
       details: details || {},
       updatedAt: new Date(),
     });
+
+    if (leadId) {
+      await db
+        .update(leadIntakes)
+        .set({
+          clientId,
+          updatedAt: new Date(),
+        })
+        .where(eq(leadIntakes.id, leadId));
+    }
 
     const [created] = await db
       .select()
