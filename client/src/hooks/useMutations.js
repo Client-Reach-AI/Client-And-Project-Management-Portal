@@ -38,6 +38,7 @@ import {
   createPublicMeetingLink,
   submitMeetingBooking,
   deleteMeeting,
+  updateMeetingSettings,
 } from '../api';
 import {
   clientKeys,
@@ -571,6 +572,24 @@ export const useDeleteMeeting = () => {
       if (workspaceId) {
         queryClient.invalidateQueries({
           queryKey: meetingKeys.list(workspaceId),
+        });
+      }
+    },
+  });
+};
+
+export const useUpdateMeetingSettings = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateMeetingSettings,
+    onSuccess: (updated, variables) => {
+      const workspaceId = updated?.workspaceId || variables?.workspaceId;
+      if (workspaceId) {
+        queryClient.invalidateQueries({
+          queryKey: meetingKeys.settings(workspaceId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['meetingLink'],
         });
       }
     },

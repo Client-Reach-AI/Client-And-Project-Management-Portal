@@ -18,8 +18,43 @@ import { isWorkspaceAdmin } from '../lib/permissions.js';
 
 const router = Router();
 const BOOKING_TIMEZONE = 'Europe/London';
+const DEFAULT_BOOKING_START_HOUR = 9;
+const DEFAULT_BOOKING_END_HOUR = 20;
 
 const toSafeString = (value) => (typeof value === 'string' ? value.trim() : '');
+
+const normalizeHour = (value, fallback) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  const intValue = Math.trunc(parsed);
+  if (intValue < 0 || intValue > 23) return fallback;
+  return intValue;
+};
+
+const resolveBookingWindow = (settings = {}) => {
+  const rawWindow = settings?.bookingWindow || {};
+  let startHour = normalizeHour(
+    rawWindow.startHour,
+    DEFAULT_BOOKING_START_HOUR
+  );
+  let endHour = normalizeHour(rawWindow.endHour, DEFAULT_BOOKING_END_HOUR);
+
+  if (startHour > endHour) {
+    [startHour, endHour] = [endHour, startHour];
+  }
+
+  return { startHour, endHour };
+};
+
+const getHourInTimezone = (date, timeZone) => {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hour: '2-digit',
+    hour12: false,
+  });
+  const parts = formatter.formatToParts(date);
+  return Number(parts.find((part) => part.type === 'hour')?.value || 0);
+};
 
 const buildBookingLink = (token) => {
   const baseUrl =
@@ -115,6 +150,7 @@ router.get('/lookup', async (req, res, next) => {
       durationMinutes: linkRecord.durationMinutes,
       timezone: BOOKING_TIMEZONE,
       title: linkRecord.title,
+      ...resolveBookingWindow(workspace?.settings),
     });
   } catch (error) {
     next(error);
@@ -151,6 +187,7 @@ router.post('/submit', async (req, res, next) => {
       .from(workspaces)
       .where(eq(workspaces.id, linkRecord.workspaceId))
       .limit(1);
+    const bookingWindow = resolveBookingWindow(workspace?.settings);
 
     const firstName = toSafeString(payload?.first_name);
     const lastName = toSafeString(payload?.last_name);
@@ -174,6 +211,16 @@ router.post('/submit', async (req, res, next) => {
     const scheduledAt = new Date(scheduledAtValue);
     if (Number.isNaN(scheduledAt.getTime())) {
       return res.status(400).json({ message: 'Invalid scheduled_at value' });
+    }
+
+    const scheduledHour = getHourInTimezone(scheduledAt, BOOKING_TIMEZONE);
+    if (
+      scheduledHour < bookingWindow.startHour ||
+      scheduledHour > bookingWindow.endHour
+    ) {
+      return res.status(400).json({
+        message: `Selected time must be between ${bookingWindow.startHour}:00 and ${bookingWindow.endHour}:00 ${BOOKING_TIMEZONE}`,
+      });
     }
 
     const durationMinutes =
@@ -253,6 +300,93 @@ router.post('/submit', async (req, res, next) => {
 });
 
 router.use(requireAuth);
+
+router.get('/settings', async (req, res, next) => {
+  try {
+    const { workspaceId } = req.query;
+    if (!workspaceId) {
+      return res.status(400).json({ message: 'workspaceId is required' });
+    }
+
+    const admin =
+      req.user.role === 'ADMIN' ||
+      (await isWorkspaceAdmin(req.user.id, workspaceId));
+    if (!admin) return res.status(403).json({ message: 'Forbidden' });
+
+    const [workspace] = await db
+      .select()
+      .from(workspaces)
+      .where(eq(workspaces.id, workspaceId))
+      .limit(1);
+
+    if (!workspace) {
+      return res.status(404).json({ message: 'Workspace not found' });
+    }
+
+    res.json({
+      workspaceId,
+      ...resolveBookingWindow(workspace.settings),
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch('/settings', async (req, res, next) => {
+  try {
+    const { workspaceId, startHour, endHour } = req.body || {};
+    if (!workspaceId) {
+      return res.status(400).json({ message: 'workspaceId is required' });
+    }
+
+    const admin =
+      req.user.role === 'ADMIN' ||
+      (await isWorkspaceAdmin(req.user.id, workspaceId));
+    if (!admin) return res.status(403).json({ message: 'Forbidden' });
+
+    const normalizedStartHour = normalizeHour(startHour, NaN);
+    const normalizedEndHour = normalizeHour(endHour, NaN);
+    if (
+      !Number.isFinite(normalizedStartHour) ||
+      !Number.isFinite(normalizedEndHour)
+    ) {
+      return res.status(400).json({
+        message: 'startHour and endHour must be integers between 0 and 23',
+      });
+    }
+
+    const [workspace] = await db
+      .select()
+      .from(workspaces)
+      .where(eq(workspaces.id, workspaceId))
+      .limit(1);
+
+    if (!workspace) {
+      return res.status(404).json({ message: 'Workspace not found' });
+    }
+
+    const settings = workspace.settings || {};
+    const nextWindow = {
+      startHour: Math.min(normalizedStartHour, normalizedEndHour),
+      endHour: Math.max(normalizedStartHour, normalizedEndHour),
+    };
+
+    await db
+      .update(workspaces)
+      .set({
+        settings: {
+          ...settings,
+          bookingWindow: nextWindow,
+        },
+        updatedAt: new Date(),
+      })
+      .where(eq(workspaces.id, workspaceId));
+
+    res.json({ workspaceId, ...nextWindow });
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.get('/', async (req, res, next) => {
   try {

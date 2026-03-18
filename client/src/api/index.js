@@ -185,6 +185,15 @@ export const deleteLeadResource = async (resourceId) =>
 export const fetchMeetings = async (workspaceId) =>
   apiFetch(`/api/meetings?workspaceId=${encodeURIComponent(workspaceId)}`);
 
+export const fetchMeetingSettings = async (workspaceId) =>
+  apiFetch(`/api/meetings/settings?workspaceId=${encodeURIComponent(workspaceId)}`);
+
+export const updateMeetingSettings = async (payload) =>
+  apiFetch('/api/meetings/settings', {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+
 export const createPublicMeetingLink = async (payload) =>
   apiFetch('/api/meetings/public', {
     method: 'POST',

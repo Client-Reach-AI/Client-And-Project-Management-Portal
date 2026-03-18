@@ -16,6 +16,7 @@ import {
   fetchInvoiceById,
   fetchLeadResources,
   fetchMeetings,
+  fetchMeetingSettings,
   lookupMeetingLink,
 } from '../api';
 import {
@@ -125,6 +126,14 @@ export const useMeetings = (workspaceId, options = {}) =>
   useQuery({
     queryKey: meetingKeys.list(workspaceId),
     queryFn: () => fetchMeetings(workspaceId),
+    enabled: Boolean(workspaceId),
+    ...options,
+  });
+
+export const useMeetingSettings = (workspaceId, options = {}) =>
+  useQuery({
+    queryKey: meetingKeys.settings(workspaceId),
+    queryFn: () => fetchMeetingSettings(workspaceId),
     enabled: Boolean(workspaceId),
     ...options,
   });

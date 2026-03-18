@@ -3,8 +3,20 @@ import { Copy, ExternalLink, Trash2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useSelector } from 'react-redux';
 import { useWorkspaceContext } from '../context/workspaceContext';
-import { useMeetings } from '../hooks/useQueries';
-import { useDeleteMeeting } from '../hooks/useMutations';
+import { useMeetingSettings, useMeetings } from '../hooks/useQueries';
+import { useDeleteMeeting, useUpdateMeetingSettings } from '../hooks/useMutations';
+
+const DEFAULT_BOOKING_START_HOUR = 9;
+const DEFAULT_BOOKING_END_HOUR = 20;
+
+const hourOptions = Array.from({ length: 24 }, (_, hour) => ({
+  value: hour,
+  label: new Date(2000, 0, 1, hour, 0, 0).toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }),
+}));
 
 const formatDate = (value) => {
   if (!value) return 'N/A';
@@ -27,10 +39,17 @@ const Bookings = () => {
   const { data: meetings = [], isLoading } = useMeetings(workspaceId, {
     enabled: Boolean(workspaceId && isAdmin),
   });
+  const { data: meetingSettings } = useMeetingSettings(workspaceId, {
+    enabled: Boolean(workspaceId && isAdmin),
+  });
   const { mutateAsync: deleteMeeting, isPending: deletingMeeting } =
     useDeleteMeeting();
+  const { mutateAsync: updateMeetingSettings, isPending: updatingSettings } =
+    useUpdateMeetingSettings();
   const [selectedMeetingId, setSelectedMeetingId] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [startHour, setStartHour] = useState(DEFAULT_BOOKING_START_HOUR);
+  const [endHour, setEndHour] = useState(DEFAULT_BOOKING_END_HOUR);
 
   const publicBookingUrl = workspaceId
     ? `${window.location.origin}/booking?workspaceId=${encodeURIComponent(
@@ -61,6 +80,12 @@ const Bookings = () => {
       setIsDetailsOpen(false);
     }
   }, [sortedMeetings, selectedMeetingId]);
+
+  useEffect(() => {
+    if (!meetingSettings) return;
+    setStartHour(meetingSettings.startHour ?? DEFAULT_BOOKING_START_HOUR);
+    setEndHour(meetingSettings.endHour ?? DEFAULT_BOOKING_END_HOUR);
+  }, [meetingSettings]);
 
   const copyLink = async () => {
     if (!publicBookingUrl) {
@@ -100,6 +125,26 @@ const Bookings = () => {
       toast.success('Booking deleted');
     } catch (error) {
       toast.error(error?.message || 'Failed to delete booking');
+    }
+  };
+
+  const saveBookingWindow = async () => {
+    if (!workspaceId) return;
+
+    const normalizedStart = Math.min(startHour, endHour);
+    const normalizedEnd = Math.max(startHour, endHour);
+
+    try {
+      await updateMeetingSettings({
+        workspaceId,
+        startHour: normalizedStart,
+        endHour: normalizedEnd,
+      });
+      toast.success('Booking hours updated');
+      setStartHour(normalizedStart);
+      setEndHour(normalizedEnd);
+    } catch (error) {
+      toast.error(error?.message || 'Failed to update booking hours');
     }
   };
 
@@ -158,6 +203,62 @@ const Bookings = () => {
               Open
             </a>
           </div>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-5 space-y-4">
+        <div>
+          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            Booking Availability Hours
+          </p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+            These hours control which time slots appear on your public booking page.
+          </p>
+        </div>
+
+        <div className="grid sm:grid-cols-[1fr_1fr_auto] gap-3 sm:items-end">
+          <div>
+            <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">
+              Start Hour
+            </label>
+            <select
+              value={startHour}
+              onChange={(event) => setStartHour(Number(event.target.value))}
+              className="w-full px-3 py-2 text-sm rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+            >
+              {hourOptions.map((option) => (
+                <option key={`start-${option.value}`} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">
+              End Hour
+            </label>
+            <select
+              value={endHour}
+              onChange={(event) => setEndHour(Number(event.target.value))}
+              className="w-full px-3 py-2 text-sm rounded border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+            >
+              {hourOptions.map((option) => (
+                <option key={`end-${option.value}`} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            type="button"
+            onClick={saveBookingWindow}
+            disabled={updatingSettings}
+            className="px-4 py-2 rounded text-sm bg-linear-to-br from-blue-500 to-blue-600 text-white disabled:opacity-60"
+          >
+            {updatingSettings ? 'Saving...' : 'Save Hours'}
+          </button>
         </div>
       </div>
 

@@ -66,7 +66,8 @@ const DECISION_MAKER_OPTIONS = [
   'No – I need approval from someone else',
 ];
 
-const TIME_SLOTS = ['03:05 PM', '04:05 PM', '05:05 PM', '06:05 PM'];
+const DEFAULT_BOOKING_START_HOUR = 9;
+const DEFAULT_BOOKING_END_HOUR = 20;
 
 const toDateKey = (date) => {
   const year = date.getFullYear();
@@ -169,6 +170,34 @@ const buildIsoFromDateAndTime = (dateKey, time12h, timeZone = TIMEZONE) => {
   }
 
   return utcDate.toISOString();
+};
+
+const to12HourLabel = (hour) => {
+  const date = new Date(2000, 0, 1, hour, 0, 0);
+  return date.toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+};
+
+const buildTimeSlots = (startHour, endHour) => {
+  const safeStart = Number.isFinite(startHour)
+    ? Math.max(0, Math.min(23, Math.trunc(startHour)))
+    : DEFAULT_BOOKING_START_HOUR;
+  const safeEnd = Number.isFinite(endHour)
+    ? Math.max(0, Math.min(23, Math.trunc(endHour)))
+    : DEFAULT_BOOKING_END_HOUR;
+
+  const rangeStart = Math.min(safeStart, safeEnd);
+  const rangeEnd = Math.max(safeStart, safeEnd);
+
+  const slots = [];
+  for (let hour = rangeStart; hour <= rangeEnd; hour += 1) {
+    slots.push(to12HourLabel(hour));
+  }
+
+  return slots;
 };
 
 const BookingForm = () => {
@@ -286,6 +315,14 @@ const BookingForm = () => {
   const selectedDateLabel = formatPrettyDate(selectedDate);
   const duration = bookingMeta?.durationMinutes || DURATION_MINUTES;
   const timezone = TIMEZONE;
+  const timeSlots = useMemo(
+    () =>
+      buildTimeSlots(
+        bookingMeta?.startHour ?? DEFAULT_BOOKING_START_HOUR,
+        bookingMeta?.endHour ?? DEFAULT_BOOKING_END_HOUR
+      ),
+    [bookingMeta?.startHour, bookingMeta?.endHour]
+  );
   const timezoneOffsetLabel = useMemo(
     () => getTimezoneOffsetLabel(timezone, selectedDate),
     [timezone, selectedDate]
@@ -585,25 +622,27 @@ const BookingForm = () => {
                       </div>
 
                       <div className="space-y-3">
-                        {TIME_SLOTS.map((time) => (
-                          <button
-                            key={time}
-                            type="button"
-                            onClick={() => setSelectedTime(time)}
-                            className={`w-full border rounded-xl py-3 text-center font-semibold transition ${
-                              selectedTime === time
-                                ? 'text-white border-transparent'
-                                : 'text-gray-200 border-white/20 hover:border-white/40 hover:bg-white/5'
-                            }`}
-                            style={
-                              selectedTime === time
-                                ? { backgroundColor: BRAND_COLOR }
-                                : undefined
-                            }
-                          >
-                            {time}
-                          </button>
-                        ))}
+                        <div className="max-h-[258px] overflow-y-auto pr-1 space-y-3">
+                          {timeSlots.map((time) => (
+                            <button
+                              key={time}
+                              type="button"
+                              onClick={() => setSelectedTime(time)}
+                              className={`w-full border rounded-xl py-3 text-center font-semibold transition ${
+                                selectedTime === time
+                                  ? 'text-white border-transparent'
+                                  : 'text-gray-200 border-white/20 hover:border-white/40 hover:bg-white/5'
+                              }`}
+                              style={
+                                selectedTime === time
+                                  ? { backgroundColor: BRAND_COLOR }
+                                  : undefined
+                              }
+                            >
+                              {time}
+                            </button>
+                          ))}
+                        </div>
 
                         <button
                           type="button"
