@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { emailDispatches } from '../db/schema.js';
+import { emailDispatches, meetings, workspaces } from '../db/schema.js';
 import { sendEmail } from '../lib/email.js';
 import { generateId } from '../lib/ids.js';
 import { qstashReceiver } from '../lib/qstash.js';
@@ -32,6 +32,47 @@ const verifyQstashSignature = async (req) => {
   });
 };
 
+const hydrateBookingFromMeeting = async ({ meetingId, booking = {} }) => {
+  if (!meetingId) return booking;
+
+  const [meeting] = await db
+    .select()
+    .from(meetings)
+    .where(eq(meetings.id, meetingId))
+    .limit(1);
+
+  if (!meeting) return booking;
+
+  let workspaceName = booking.workspaceName || null;
+
+  if (!workspaceName && meeting.workspaceId) {
+    const [workspace] = await db
+      .select({ name: workspaces.name })
+      .from(workspaces)
+      .where(eq(workspaces.id, meeting.workspaceId))
+      .limit(1);
+
+    workspaceName = workspace?.name || null;
+  }
+
+  return {
+    workspaceName: booking.workspaceName ?? workspaceName,
+    firstName: booking.firstName ?? meeting.firstName,
+    lastName: booking.lastName ?? meeting.lastName,
+    attendeeEmail: booking.attendeeEmail ?? meeting.email,
+    email: booking.email ?? meeting.email,
+    phone: booking.phone ?? meeting.phone,
+    timezone: booking.timezone ?? meeting.timezone,
+    durationMinutes: booking.durationMinutes ?? meeting.durationMinutes,
+    scheduledAt: booking.scheduledAt ?? meeting.scheduledAt,
+    websiteUrl: booking.websiteUrl ?? meeting.websiteUrl,
+    businessType: booking.businessType ?? meeting.businessType,
+    targetAudience: booking.targetAudience ?? meeting.targetAudience,
+    monthlyRevenue: booking.monthlyRevenue ?? meeting.monthlyRevenue,
+    decisionMaker: booking.decisionMaker ?? meeting.decisionMaker,
+  };
+};
+
 export const sendEmailHandler = async (req, res, next) => {
   try {
     const isVerified = await verifyQstashSignature(req);
@@ -59,9 +100,14 @@ export const sendEmailHandler = async (req, res, next) => {
       return res.json({ message: 'Email already processed' });
     }
 
+    const bookingWithFallback = await hydrateBookingFromMeeting({
+      meetingId,
+      booking,
+    });
+
     const reminderContent = buildReminderEmailContent({
       emailType,
-      booking,
+      booking: bookingWithFallback,
       zoomLink,
     });
 
