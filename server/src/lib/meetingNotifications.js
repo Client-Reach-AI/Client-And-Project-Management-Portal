@@ -1,33 +1,9 @@
-import { generateId } from './ids.js';
 import {
   getEmailFromAddress,
   getOwnerEmail,
   isEmailConfigured,
   sendEmail,
 } from './email.js';
-
-export const MEETING_REMINDER_SCHEDULES = [
-  {
-    key: 'REMINDER_2_HOURS',
-    minutesBefore: 120,
-    label: '2 hours',
-  },
-  {
-    key: 'REMINDER_1_HOUR',
-    minutesBefore: 60,
-    label: '1 hour',
-  },
-  {
-    key: 'REMINDER_30_MINUTES',
-    minutesBefore: 30,
-    label: '30 minutes',
-  },
-  {
-    key: 'REMINDER_5_MINUTES',
-    minutesBefore: 5,
-    label: '5 minutes',
-  },
-];
 
 const escapeHtml = (value = '') =>
   String(value)
@@ -105,45 +81,6 @@ export const formatBookingDate = (scheduledAt, timezone) => {
   }
 };
 
-const getReminderLabel = (minutesBefore) => {
-  const config = MEETING_REMINDER_SCHEDULES.find(
-    (entry) => entry.minutesBefore === minutesBefore
-  );
-
-  if (config) return config.label;
-  if (minutesBefore % 60 === 0) {
-    const hours = minutesBefore / 60;
-    return `${hours} hour${hours === 1 ? '' : 's'}`;
-  }
-
-  return `${minutesBefore} minutes`;
-};
-
-export const buildMeetingReminderValues = ({
-  meetingId,
-  scheduledAt,
-  now = new Date(),
-}) => {
-  const scheduledDate = new Date(scheduledAt);
-  if (Number.isNaN(scheduledDate.getTime())) return [];
-
-  return MEETING_REMINDER_SCHEDULES.map(({ key, minutesBefore }) => {
-    const scheduledFor = new Date(
-      scheduledDate.getTime() - minutesBefore * 60 * 1000
-    );
-
-    return {
-      id: generateId('meeting_reminder'),
-      meetingId,
-      reminderType: key,
-      minutesBefore,
-      scheduledFor,
-      status: 'PENDING',
-      updatedAt: now,
-    };
-  }).filter((reminder) => reminder.scheduledFor > now);
-};
-
 export const sendMeetingBookingEmails = async ({
   workspaceName,
   firstName,
@@ -170,13 +107,13 @@ export const sendMeetingBookingEmails = async ({
   const customerHtml = buildBrandedEmailShell({
     greeting: `Hey ${escapeHtml(firstName || 'there')},`,
     intro:
-      'Your booking is confirmed. We are looking forward to speaking with you and helping you make the most of the session.',
+      'Thank you for booking with Client Reach AI. Your session has been confirmed, and we look forward to speaking with you.',
     content: buildClientBookingSummaryCard({
       formattedDate,
       timezone,
       durationMinutes,
       extraNote:
-        'You do not need to bring anything special. Just be ready a few minutes early and keep an eye on your inbox for reminders before the call.',
+        'You will receive reminder emails before your meeting. Your booking link will be shared in the final reminder email sent 5 minutes before the call.',
     }),
   });
 
@@ -199,61 +136,5 @@ export const sendMeetingBookingEmails = async ({
   await Promise.all([
     sendEmail({ from: fromAddress, to: email, subject: 'Your booking is confirmed', html: customerHtml }),
     sendEmail({ from: fromAddress, to: ownerEmail, subject: `New booking: ${fullName || 'Unknown contact'}`, html: ownerHtml }),
-  ]);
-};
-
-export const sendMeetingReminderEmails = async ({
-  workspaceName,
-  firstName,
-  lastName,
-  email,
-  phone,
-  timezone,
-  durationMinutes,
-  scheduledAt,
-  minutesBefore,
-}) => {
-  if (!isEmailConfigured()) {
-    throw new Error('RESEND_API_KEY is not configured');
-  }
-
-  const fromAddress = getEmailFromAddress();
-  const ownerEmail = getOwnerEmail();
-  const fullName = `${firstName} ${lastName}`.trim();
-  const reminderLabel = getReminderLabel(minutesBefore);
-  const formattedDate = formatBookingDate(scheduledAt, timezone);
-  const customerHtml = buildBrandedEmailShell({
-    greeting: `Hey ${escapeHtml(firstName || 'there')},`,
-    intro: `Just a quick reminder that your call starts in ${escapeHtml(reminderLabel)}.`,
-    content: buildClientBookingSummaryCard({
-      formattedDate,
-      timezone,
-      durationMinutes,
-      extraNote:
-        'Please join on time and make sure you are in a quiet place with a stable connection so we can make the session as useful as possible.',
-    }),
-    ctaLabel:
-      'Need to share an update before the call? Reply to this email and our team will see it.',
-  });
-
-  const ownerHtml = buildTechnicalBookingEmailHtml({
-    heading: `Upcoming booking in ${escapeHtml(reminderLabel)} 📅`,
-    fullName,
-    email,
-    phone,
-    websiteUrl: null,
-    businessType: null,
-    targetAudience: null,
-    monthlyRevenue: null,
-    decisionMaker: null,
-    workspaceName,
-    formattedDate,
-    timezone,
-    durationMinutes,
-  });
-
-  await Promise.all([
-    sendEmail({ from: fromAddress, to: email, subject: `Reminder: your call starts in ${reminderLabel}`, html: customerHtml }),
-    sendEmail({ from: fromAddress, to: ownerEmail, subject: `Upcoming booking in ${reminderLabel}: ${fullName || 'Unknown contact'}`, html: ownerHtml }),
   ]);
 };
