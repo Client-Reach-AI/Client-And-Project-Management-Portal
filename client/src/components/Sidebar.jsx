@@ -14,6 +14,7 @@ import {
   FolderOpenIcon,
   LayoutDashboardIcon,
   MessageSquareIcon,
+  GraduationCapIcon,
   UsersIcon,
   WalletIcon,
 } from 'lucide-react';
@@ -108,6 +109,12 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
                 name: 'Bookings',
                 href: '/bookings',
                 icon: CalendarPlusIcon,
+                exact: true,
+              },
+              {
+                name: 'MNT',
+                href: '/mentorship',
+                icon: GraduationCapIcon,
                 exact: true,
               },
             ]

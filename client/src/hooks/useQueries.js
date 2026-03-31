@@ -18,6 +18,7 @@ import {
   fetchMeetings,
   fetchMeetingSettings,
   lookupMeetingLink,
+  fetchMntPeople,
 } from '../api';
 import {
   clientKeys,
@@ -31,6 +32,7 @@ import {
   messageKeys,
   invoiceKeys,
   meetingKeys,
+  mntKeys,
 } from './queryKeys';
 
 export const useWorkspaces = (options = {}) =>
@@ -147,12 +149,33 @@ export const useMeetingLinkLookup = (token, options = {}) =>
   });
 
 export const useSharedFiles = (
-  { workspaceId, clientId, projectId } = {},
+  { workspaceId, clientId, projectId, mntPersonId, fileScope } = {},
   options = {}
 ) =>
   useQuery({
-    queryKey: fileKeys.list(workspaceId, clientId, projectId),
-    queryFn: () => fetchSharedFiles({ workspaceId, clientId, projectId }),
+    queryKey: fileKeys.list(
+      workspaceId,
+      clientId,
+      projectId,
+      mntPersonId,
+      fileScope
+    ),
+    queryFn: () =>
+      fetchSharedFiles({
+        workspaceId,
+        clientId,
+        projectId,
+        mntPersonId,
+        fileScope,
+      }),
+    enabled: Boolean(workspaceId),
+    ...options,
+  });
+
+export const useMntPeople = (workspaceId, options = {}) =>
+  useQuery({
+    queryKey: mntKeys.list(workspaceId),
+    queryFn: () => fetchMntPeople(workspaceId),
     enabled: Boolean(workspaceId),
     ...options,
   });

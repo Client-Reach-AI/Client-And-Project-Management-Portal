@@ -14,6 +14,7 @@ import messagesRouter from './routes/messages.js';
 import invoicesRouter from './routes/invoices.js';
 import stripeRouter from './routes/stripe.js';
 import meetingsRouter from './routes/meetings.js';
+import mntRouter from './routes/mnt.js';
 import { sendEmailHandler } from './routes/emailWorker.js';
 import { requireAuth } from './middleware/auth.js';
 import { validateRequiredEnv } from './lib/runtimeEnv.js';
@@ -56,6 +57,7 @@ app.use('/api/tasks', tasksRouter);
 app.use('/api/files', filesRouter);
 app.use('/api/messages', messagesRouter);
 app.use('/api/invoices', invoicesRouter);
+app.use('/api/mnt', mntRouter);
 
 app.use((err, req, res, next) => {
   console.error(err);

@@ -1,14 +1,16 @@
 import { Router } from 'express';
 import crypto from 'crypto';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import {
   clients,
+  mntPeople,
   projects,
   sharedFiles,
   workspaceMembers,
 } from '../db/schema.js';
 import { generateId } from '../lib/ids.js';
+import { isWorkspaceAdmin } from '../lib/permissions.js';
 
 const router = Router();
 
@@ -103,13 +105,20 @@ router.post('/signature', async (req, res, next) => {
 
 router.get('/', async (req, res, next) => {
   try {
-    const { workspaceId, clientId, projectId } = req.query;
+    const { workspaceId, clientId, projectId, mntPersonId, fileScope } =
+      req.query;
     if (!workspaceId) {
       return res.status(400).json({ message: 'workspaceId is required' });
     }
 
     const allowed = await canAccessWorkspace(req.user, workspaceId);
     if (!allowed) return res.status(403).json({ message: 'Forbidden' });
+
+    if (mntPersonId && (clientId || projectId)) {
+      return res.status(400).json({
+        message: 'mntPersonId cannot be combined with clientId or projectId',
+      });
+    }
 
     let effectiveWorkspaceId = workspaceId;
     let effectiveClientId = clientId || null;
@@ -124,11 +133,63 @@ router.get('/', async (req, res, next) => {
       }
     }
 
+    const hasAdminAccess =
+      req.user.role === 'ADMIN' ||
+      (await isWorkspaceAdmin(req.user.id, effectiveWorkspaceId));
+
     const filters = [eq(sharedFiles.workspaceId, effectiveWorkspaceId)];
     if (effectiveClientId) {
       filters.push(eq(sharedFiles.clientId, effectiveClientId));
     }
+    if (mntPersonId) {
+      const admin =
+        req.user.role === 'ADMIN' ||
+        (await isWorkspaceAdmin(req.user.id, effectiveWorkspaceId));
+      if (!admin) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+
+      const [person] = await db
+        .select()
+        .from(mntPeople)
+        .where(eq(mntPeople.id, mntPersonId))
+        .limit(1);
+
+      if (!person || person.workspaceId !== effectiveWorkspaceId) {
+        return res.status(400).json({ message: 'Invalid mntPersonId' });
+      }
+
+      filters.push(eq(sharedFiles.mntPersonId, mntPersonId));
+    } else {
+      filters.push(isNull(sharedFiles.mntPersonId));
+    }
+
     if (projectId) filters.push(eq(sharedFiles.projectId, projectId));
+
+    if (fileScope === 'ADMIN_ONLY') {
+      if (!hasAdminAccess) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+
+      filters.push(sql`(
+        (${sharedFiles.metadata} ->> 'fileScope') = 'ADMIN_ONLY'
+        OR (${sharedFiles.metadata} ->> 'source') = 'ADMIN_PORTAL'
+      )`);
+    }
+
+    if (fileScope === 'CLIENT_PORTAL') {
+      filters.push(sql`NOT (
+        (${sharedFiles.metadata} ->> 'fileScope') = 'ADMIN_ONLY'
+        OR (${sharedFiles.metadata} ->> 'source') = 'ADMIN_PORTAL'
+      )`);
+    }
+
+    if (!fileScope && !hasAdminAccess) {
+      filters.push(sql`NOT (
+        (${sharedFiles.metadata} ->> 'fileScope') = 'ADMIN_ONLY'
+        OR (${sharedFiles.metadata} ->> 'source') = 'ADMIN_PORTAL'
+      )`);
+    }
 
     const list = await db
       .select()
@@ -148,6 +209,7 @@ router.post('/', async (req, res, next) => {
       workspaceId,
       clientId,
       projectId,
+      mntPersonId,
       name,
       type,
       url,
@@ -161,6 +223,12 @@ router.post('/', async (req, res, next) => {
       return res
         .status(400)
         .json({ message: 'workspaceId, name, type, url are required' });
+    }
+
+    if (mntPersonId && (clientId || projectId)) {
+      return res.status(400).json({
+        message: 'mntPersonId cannot be combined with clientId or projectId',
+      });
     }
 
     const allowed = await canAccessWorkspace(req.user, workspaceId);
@@ -190,6 +258,25 @@ router.post('/', async (req, res, next) => {
       }
     }
 
+    if (mntPersonId) {
+      const admin =
+        req.user.role === 'ADMIN' ||
+        (await isWorkspaceAdmin(req.user.id, workspaceId));
+      if (!admin) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+
+      const [person] = await db
+        .select()
+        .from(mntPeople)
+        .where(eq(mntPeople.id, mntPersonId))
+        .limit(1);
+
+      if (!person || person.workspaceId !== workspaceId) {
+        return res.status(400).json({ message: 'Invalid mntPersonId' });
+      }
+    }
+
     let resolvedClientId = clientId || null;
     let effectiveWorkspaceId = workspaceId;
 
@@ -209,6 +296,7 @@ router.post('/', async (req, res, next) => {
       id: fileId,
       workspaceId: effectiveWorkspaceId,
       clientId: resolvedClientId,
+      mntPersonId: mntPersonId || null,
       projectId: projectId || null,
       name,
       type,

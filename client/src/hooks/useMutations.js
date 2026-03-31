@@ -39,6 +39,9 @@ import {
   submitMeetingBooking,
   deleteMeeting,
   updateMeetingSettings,
+  createMntPerson,
+  updateMntPerson,
+  deleteMntPerson,
 } from '../api';
 import {
   clientKeys,
@@ -52,6 +55,7 @@ import {
   messageKeys,
   invoiceKeys,
   meetingKeys,
+  mntKeys,
 } from './queryKeys';
 
 export const useCreateWorkspace = () => {
@@ -267,9 +271,23 @@ export const useCreateSharedFile = () => {
         queryKey: fileKeys.list(
           variables.workspaceId,
           variables.clientId,
-          variables.projectId
+          variables.projectId,
+          variables.mntPersonId,
+          variables.fileScope
         ),
       });
+
+      if (variables?.fileScope) {
+        queryClient.invalidateQueries({
+          queryKey: fileKeys.list(
+            variables.workspaceId,
+            variables.clientId,
+            variables.projectId,
+            variables.mntPersonId,
+            null
+          ),
+        });
+      }
     },
   });
 };
@@ -590,6 +608,50 @@ export const useUpdateMeetingSettings = () => {
         });
         queryClient.invalidateQueries({
           queryKey: ['meetingLink'],
+        });
+      }
+    },
+  });
+};
+
+export const useCreateMntPerson = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createMntPerson,
+    onSuccess: (created, variables) => {
+      const workspaceId = created?.workspaceId || variables?.workspaceId;
+      if (workspaceId) {
+        queryClient.invalidateQueries({
+          queryKey: mntKeys.list(workspaceId),
+        });
+      }
+    },
+  });
+};
+
+export const useUpdateMntPerson = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ mntId, payload }) => updateMntPerson(mntId, payload),
+    onSuccess: (updated, variables) => {
+      const workspaceId = updated?.workspaceId || variables?.workspaceId;
+      if (workspaceId) {
+        queryClient.invalidateQueries({
+          queryKey: mntKeys.list(workspaceId),
+        });
+      }
+    },
+  });
+};
+
+export const useDeleteMntPerson = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ mntId }) => deleteMntPerson(mntId),
+    onSuccess: (_, variables) => {
+      if (variables?.workspaceId) {
+        queryClient.invalidateQueries({
+          queryKey: mntKeys.list(variables.workspaceId),
         });
       }
     },

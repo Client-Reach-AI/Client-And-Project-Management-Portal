@@ -239,11 +239,15 @@ export const fetchSharedFiles = async ({
   workspaceId,
   clientId,
   projectId,
+  mntPersonId,
+  fileScope,
 } = {}) => {
   const params = new URLSearchParams();
   if (workspaceId) params.set('workspaceId', workspaceId);
   if (clientId) params.set('clientId', clientId);
   if (projectId) params.set('projectId', projectId);
+  if (mntPersonId) params.set('mntPersonId', mntPersonId);
+  if (fileScope) params.set('fileScope', fileScope);
   return apiFetch(`/api/files?${params.toString()}`);
 };
 
@@ -257,6 +261,26 @@ export const createFileSignature = async (payload) =>
   apiFetch('/api/files/signature', {
     method: 'POST',
     body: JSON.stringify(payload),
+  });
+
+export const fetchMntPeople = async (workspaceId) =>
+  apiFetch(`/api/mnt?workspaceId=${encodeURIComponent(workspaceId)}`);
+
+export const createMntPerson = async (payload) =>
+  apiFetch('/api/mnt', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+
+export const updateMntPerson = async (id, payload) =>
+  apiFetch(`/api/mnt/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+
+export const deleteMntPerson = async (id) =>
+  apiFetch(`/api/mnt/${id}`, {
+    method: 'DELETE',
   });
 
 export const fetchMessages = async (workspaceId) =>

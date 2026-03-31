@@ -335,12 +335,32 @@ export const invitations = pgTable('invitations', {
     .notNull(),
 });
 
+export const mntPeople = pgTable('mnt_people', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id')
+    .notNull()
+    .references(() => workspaces.id),
+  fullName: text('full_name').notNull(),
+  email: text('email'),
+  phone: text('phone'),
+  status: text('status').default('ACTIVE').notNull(),
+  notes: text('notes'),
+  details: jsonb('details').default({}),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
 export const sharedFiles = pgTable('shared_files', {
   id: text('id').primaryKey(),
   workspaceId: text('workspace_id')
     .notNull()
     .references(() => workspaces.id),
   clientId: text('client_id').references(() => clients.id),
+  mntPersonId: text('mnt_person_id').references(() => mntPeople.id),
   projectId: text('project_id').references(() => projects.id),
   name: text('name').notNull(),
   type: text('type').notNull(),

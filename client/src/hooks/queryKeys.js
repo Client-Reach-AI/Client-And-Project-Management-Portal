@@ -37,12 +37,18 @@ export const meetingKeys = {
 };
 
 export const fileKeys = {
-  list: (workspaceId, clientId, projectId) => [
+  list: (workspaceId, clientId, projectId, mntPersonId, fileScope) => [
     'sharedFiles',
     workspaceId,
     clientId || null,
     projectId || null,
+    mntPersonId || null,
+    fileScope || null,
   ],
+};
+
+export const mntKeys = {
+  list: (workspaceId) => ['mntPeople', workspaceId],
 };
 
 export const messageKeys = {

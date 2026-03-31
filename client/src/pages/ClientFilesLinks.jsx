@@ -128,6 +128,7 @@ const ClientFilesLinks = () => {
         cloudinaryPublicId: uploaded.public_id,
         metadata: {
           resourceType: uploaded.resource_type || resourceType,
+          fileScope: "CLIENT_PORTAL",
         },
       });
 
@@ -158,6 +159,9 @@ const ClientFilesLinks = () => {
         name: linkName.trim(),
         type: "LINK",
         url: resolvedUrl,
+        metadata: {
+          fileScope: "CLIENT_PORTAL",
+        },
       });
 
       setLinkName("");
