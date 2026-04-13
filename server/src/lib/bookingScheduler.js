@@ -91,6 +91,11 @@ export const scheduleEmails = async ({
   const meetingTimestamp = toUnixSeconds(scheduledAt);
   const nowTimestamp = Math.floor(Date.now() / 1000);
   const ownerEmail = getOwnerEmail();
+  if (!ownerEmail) {
+    throw new Error(
+      'INTERNAL_REMINDER_EMAIL or OWNER_EMAIL must be configured'
+    );
+  }
 
   const jobs = REMINDER_STEPS.map((step) => {
     const notBefore = meetingTimestamp - step.minutesBefore * 60;

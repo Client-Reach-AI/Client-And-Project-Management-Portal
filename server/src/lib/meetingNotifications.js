@@ -247,6 +247,11 @@ export const sendMeetingBookingEmails = async ({
 
   const fromAddress = getEmailFromAddress();
   const ownerEmail = getOwnerEmail();
+  if (!ownerEmail) {
+    throw new Error(
+      "INTERNAL_REMINDER_EMAIL or OWNER_EMAIL must be configured"
+    );
+  }
   const fullName = `${firstName} ${lastName}`.trim();
   const formattedDate = formatBookingDate(scheduledAt, timezone);
   const customerHtml = buildBrandedEmailShell({

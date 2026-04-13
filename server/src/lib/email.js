@@ -18,7 +18,7 @@ export const getEmailFromAddress = () => {
 };
 
 export const getOwnerEmail = () =>
-  process.env.OWNER_EMAIL || process.env.EMAIL_USER;
+  process.env.INTERNAL_REMINDER_EMAIL || process.env.OWNER_EMAIL || null;
 
 export const sendEmail = async ({ from, to, subject, html, text }) => {
   if (!html && !text) {
